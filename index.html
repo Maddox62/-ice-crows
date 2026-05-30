@@ -279,6 +279,28 @@ textarea{resize:vertical;min-height:65px;}
 .edit-form{background:var(--bg3);border:1px solid var(--acc);border-radius:var(--r-sm);padding:12px;margin-top:8px;}
 
 @media(max-width:900px){.g2,.g3{grid-template-columns:1fr;}.fr2,.fr3{grid-template-columns:1fr;}.stat-strip{grid-template-columns:1fr 1fr;}}
+
+/* ── COMMANDE MEMBRE BANNER (moderne) ── */
+.cmd-member-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  background:linear-gradient(135deg,rgba(20,184,166,.12),rgba(74,124,252,.08));
+  border:1px solid rgba(20,184,166,.3);border-radius:14px;padding:18px 22px;margin-bottom:18px;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);}
+.cmd-member-title{font-size:16px;font-weight:700;margin-bottom:2px;}
+.cmd-member-sub{font-size:12px;color:var(--muted2,#aaa);}
+.cmd-member-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.cmd-member-banner .btn-teal{box-shadow:0 2px 12px rgba(20,184,166,.35);font-weight:600;padding:10px 18px;}
+
+/* ── POLISH GÉNÉRAL ── */
+.card{transition:border-color .2s,transform .15s;}
+.card:hover{border-color:var(--border2,#303030);}
+.btn{transition:all .15s ease;}
+.btn:active{transform:scale(.97);}
+.stat,.sc,.stat-card{transition:transform .18s,border-color .2s;}
+.stat:hover,.sc:hover{transform:translateY(-2px);}
+.ntab{transition:color .15s,border-color .15s;}
+input,select,textarea{transition:border-color .15s,box-shadow .15s;}
+.badge,.bdg{letter-spacing:.3px;}
+
 </style>
 </head>
 <body>
@@ -621,14 +643,20 @@ textarea{resize:vertical;min-height:65px;}
 
 <!-- ═══ COMMANDES ═══ -->
 <div class="page" id="page-commandes">
-  <div id="maCmdBanner" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div><div style="font-weight:600">🛒 Mes commandes</div><div id="maCmdCount" style="font-size:12px;color:var(--muted2)"></div></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-teal btn-sm" onclick="openMaCommande()">+ Passer une commande</button>
-      <button class="btn btn-ghost btn-sm" onclick="toggleMaCmd()">Voir ↓</button>
+  <!-- Bandeau membre : visible par TOUS -->
+  <div id="maCmdBanner" class="cmd-member-banner">
+    <div class="cmd-member-info">
+      <div class="cmd-member-title">🛒 Mes commandes</div>
+      <div id="maCmdCount" class="cmd-member-sub"></div>
+    </div>
+    <div class="cmd-member-actions">
+      <button class="btn btn-teal" onclick="openMaCommande()">➕ Passer une commande</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleMaCmd()" id="maCmdToggleBtn">Voir mes commandes ↓</button>
     </div>
   </div>
   <div id="maCmdList" style="display:none;margin-bottom:16px"></div>
+  <!-- Zone admin/officier : interface complète -->
+  <div id="cmdAdminZone">
   <div class="stats-row" id="cmdStats"></div>
   <div class="g2" style="margin-bottom:14px">
     <div class="card">
@@ -672,6 +700,7 @@ textarea{resize:vertical;min-height:65px;}
       <div id="cmdHistClient" class="scr"></div>
     </div>
   </div>
+  </div><!-- /cmdAdminZone -->
 </div>
 
 <!-- ═══ BANQUE ═══ -->
@@ -1495,7 +1524,18 @@ function renderAll(){
   if(mcb&&currentUser){
     const myCmds=S.commandes.filter(c=>c.createdBy===currentUser._id);
     mcb.style.display='flex';
-    if(mcc){const np=myCmds.filter(c=>c.statut==='prete').length;const npy=myCmds.filter(c=>c.statut==='payee').length;mcc.textContent=(myCmds.length===0?'Aucune commande pour l\'instant':myCmds.length+' commande(s)'+(np?' — '+np+' prête(s)':'')+(npy?' — '+npy+' payée(s)':''));}
+    if(mcc){
+      const np=myCmds.filter(c=>c.statut==='prete').length;
+      const npy=myCmds.filter(c=>c.statut==='payee').length;
+      mcc.textContent=(myCmds.length===0?"Aucune commande pour l'instant":myCmds.length+' commande(s)'+(np?' · '+np+' prête(s)':'')+(npy?' · '+npy+' payée(s)':''));
+    }
+  }
+  // Zone admin : visible seulement pour officers/admins
+  const caz=document.getElementById('cmdAdminZone');
+  if(caz&&currentUser){
+    const g=getGrade(currentUser.gradeId);
+    const isOfficer=g&&['admin','officer'].includes(g.perms||'member');
+    caz.style.display=isOfficer?'block':'none';
   }
 }
 
@@ -1723,10 +1763,11 @@ function renderBanque(){
 // ═══ CLOCK ═══
 function toggleMaCmd(){
   const el=document.getElementById('maCmdList');
-  const btn=event?.target;
+  const btn=document.getElementById('maCmdToggleBtn');
   if(!el)return;
   const open=el.style.display!=='none';
   el.style.display=open?'none':'block';
+  if(btn)btn.textContent=open?'Voir mes commandes ↓':'Masquer ↑';
   if(!open)renderMesCmds();
 }
 function renderMaCmd(){
