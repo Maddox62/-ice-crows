@@ -346,21 +346,8 @@ textarea{resize:vertical;min-height:65px;}
 
 <!-- ═══ DASHBOARD ═══ -->
 <div class="page active" id="page-dashboard">
-  <div class="stats-row" id="ds">
-<div class="card" id="objConfigCard" style="display:none;margin-top:16px">
-  <div class="card-title card-header"><span>🎯 Objectif de la Semaine</span></div>
-  <div class="form-row3">
-    <div class="form-group"><label class="form-label">Titre</label><input id="objTitre" placeholder="Objectif semaine..."></div>
-    <div class="form-group"><label class="form-label">Type</label><select id="objType"><option value="total">💰 Total butin ($)</option><option value="mc">🏦 Caisse MC ($)</option><option value="ops">📋 Nombre d'ops</option></select></div>
-    <div class="form-group"><label class="form-label">Objectif</label><input type="number" id="objTarget" placeholder="1000000"></div>
-  </div>
-  <div style="display:flex;gap:8px">
-    <button class="btn btn-blue" onclick="saveObjective()">💾 Définir l'objectif</button>
-    <button class="btn btn-red btn-sm" onclick="clearObjective()">Supprimer</button>
-  </div>
-</div>
-</div>
-</div>
+  <div id="objDisplay" style="margin-bottom:14px"></div>
+  <div class="stats-row" id="ds"></div>
   <div class="g2" style="margin-bottom:14px">
     <div class="card"><div class="card-title">⚡ Dernières Ops</div><div class="scr"><table class="tbl"><thead><tr><th>Type</th><th>Valeur</th><th>MC</th><th>Date</th><th></th></tr></thead><tbody id="ds-ops"></tbody></table></div></div>
     <div class="card"><div class="card-title">📅 Prochains Événements</div><div id="ds-evts" class="scr"></div></div>
@@ -369,17 +356,25 @@ textarea{resize:vertical;min-height:65px;}
     <div class="card"><div class="card-title">💰 Salaires en attente</div><div id="ds-sal" class="scr"></div></div>
     <div class="card"><div class="card-title">🎯 Missions actives</div><div id="ds-mis" class="scr"></div></div>
   </div>
-  <!-- Objective display -->
-<div id="objDisplay" style="margin-bottom:16px"></div>
-
-<div class="card" id="resetCard" style="display:none">
+  <div class="card" id="resetCard" style="display:none;margin-bottom:14px">
     <div class="card-title">🔄 Resets</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:10px" id="limDesc">Chargement...</p>
+    <p style="color:var(--muted2);font-size:12px;margin-bottom:10px" id="limDesc">Journalier : superette (2/j), ammu (2/j), ATM/cambu/conteneur (6/6/6/membre). Hebdo : bijouterie (2/sem), humanlab (2/sem).</p>
     <button class="btn btn-red" onclick="resetDaily()">⚠ RESET JOURNALIER</button>
     <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="resetWeekly()">🗓 RESET HEBDO</button>
   </div>
+  <div class="card" id="objConfigCard" style="display:none">
+    <div class="card-title card-header"><span>🎯 Objectif de la Semaine</span></div>
+    <div class="form-row3">
+      <div class="form-group"><label class="form-label">Titre</label><input id="objTitre" placeholder="Objectif semaine..."></div>
+      <div class="form-group"><label class="form-label">Type</label><select id="objType"><option value="total">💰 Total butin ($)</option><option value="mc">🏦 Caisse MC ($)</option><option value="ops">📋 Nombre d'ops</option></select></div>
+      <div class="form-group"><label class="form-label">Objectif</label><input type="number" id="objTarget" placeholder="1000000"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-blue" onclick="saveObjective()">💾 Définir l'objectif</button>
+      <button class="btn btn-red btn-sm" onclick="clearObjective()">Supprimer</button>
+    </div>
+  </div>
 </div>
-
 
 <!-- ═══ MEMBRES ═══ -->
 <div class="page" id="page-membres">
@@ -614,9 +609,12 @@ textarea{resize:vertical;min-height:65px;}
 
 <!-- ═══ COMMANDES ═══ -->
 <div class="page" id="page-commandes">
-  <div id="maCmdBanner" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px 18px;margin-bottom:16px">
-    <div><div style="font-weight:600">📋 Mes commandes</div><div id="maCmdCount" style="font-size:12px;color:var(--muted2)"></div></div>
-    <button class="btn btn-ghost btn-sm" onclick="toggleMaCmd()">Voir mes commandes ↓</button>
+  <div id="maCmdBanner" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div><div style="font-weight:600">🛒 Mes commandes</div><div id="maCmdCount" style="font-size:12px;color:var(--muted2)"></div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-teal btn-sm" onclick="openMaCommande()">+ Passer une commande</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleMaCmd()">Voir ↓</button>
+    </div>
   </div>
   <div id="maCmdList" style="display:none;margin-bottom:16px"></div>
   <div class="stats-row" id="cmdStats"></div>
