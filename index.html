@@ -641,9 +641,13 @@ textarea{resize:vertical;min-height:65px;}
       <button class="btn btn-teal" style="width:100%" onclick="submitCommande()">🛒 ENREGISTRER LA COMMANDE</button>
     </div>
     <div class="card">
-      <div class="card-title">📋 Commandes Récentes</div>
+      <div class="card-title">📋 Commandes Récentes <span style="font-size:10px;color:var(--muted2);font-weight:400">(actives)</span></div>
       <div id="cmdRecentes" class="scr"></div>
     </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center"><span>🗄 Commandes Archivées <span style="font-size:10px;color:var(--muted2);font-weight:400">(payées / annulées)</span></span><button class="btn btn-ghost btn-sm" onclick="toggleArchives()" id="archToggle">Afficher ↓</button></div>
+    <div id="cmdArchives" class="scr" style="display:none"></div>
   </div>
   <div class="g2" style="margin-bottom:14px">
     <div class="card">
@@ -1326,7 +1330,7 @@ async function submitCommande(){
   document.getElementById('cmdLines').innerHTML='';document.getElementById('cmdTotal').textContent='$0';cmdLineCount=0;
   document.getElementById('cmdNotes').value='';notify('✅ Commande enregistrée !','ok');
 }
-async function updCommande(id,statut){await fbUpd('commandes',id,{statut});}
+async function updCommande(id,statut){const upd={statut};if(statut==='payee'||statut==='annulee'){upd.archived=true;upd.archivedAt=nowStr();}else{upd.archived=false;}await fbUpd('commandes',id,upd);const lbl={attente:'en attente',prete:'prête',livree:'livrée',payee:'payée et archivée',annulee:'annulée et archivée'};notify('Commande '+(lbl[statut]||statut),'ok');}
 async function delCommande(id){await fbDel('commandes',id);}
 
 // ═══ BANQUE ═══
@@ -1663,10 +1667,27 @@ function renderArmurerie(){
   const at=document.getElementById('armTable');if(!at)return;
   at.innerHTML=S.armes.length===0?`<tr><td colspan="7" class="es">Aucune arme enregistrée</td></tr>`:S.armes.map(a=>`<tr><td><strong>${a.itemNom}</strong></td><td>${a.ownerNom}</td><td style="font-family:'Share Tech Mono';font-size:11px">${a.serial||'—'}</td><td><span class="badge ${etatColors[a.etat]||'b-gray'}">${a.etat}</span></td><td style="color:var(--gold)">${fmt(a.prixAchat)}</td><td style="font-size:11px;color:var(--muted)">${a.notes||'—'}</td><td><select style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:11px;padding:2px;border-radius:3px" onchange="updArmeEtat('${a._id}',this.value)"><option ${a.etat==='neuve'?'selected':''} value="neuve">✨ Neuve</option><option ${a.etat==='bonne'?'selected':''} value="bonne">✅ Bonne</option><option ${a.etat==='usee'?'selected':''} value="usee">⚠ Usée</option><option ${a.etat==='cassee'?'selected':''} value="cassee">❌ Cassée</option></select> ${isAdmin()?`<button class="btn btn-red sm" style="padding:2px 5px;margin-left:3px" onclick="delArme('${a._id}')">✕</button>`:''}</td></tr>`).join('');
 }
+
+// ── ARCHIVES COMMANDES ──
+function toggleArchives(){
+  const el=document.getElementById('cmdArchives');const btn=document.getElementById('archToggle');
+  if(!el)return;const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';if(btn)btn.textContent=open?'Afficher ↓':'Masquer ↑';
+  if(!open)renderArchives();
+}
+function renderArchives(){
+  const el=document.getElementById('cmdArchives');if(!el)return;
+  const cs={attente:'b-gray',prete:'b-tl',livree:'b-bl',payee:'b-gn',annulee:'b-rd'};
+  const arch=S.commandes.filter(c=>c.archived).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  el.innerHTML=arch.length===0?'<div class="es">Aucune commande archivée</div>':arch.map(c=>'<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>'+c.clientNom+'</strong> — <span style="color:var(--gold)">'+fmt(c.total)+'</span></div><div style="display:flex;gap:4px;align-items:center"><span class="badge '+(cs[c.statut]||'b-gray')+'">'+c.statut+'</span>'+(isAdmin()?'<button class="btn btn-ghost btn-xs" onclick="unarchiveCmd(\''+c._id+'\')">↩</button><button class="btn btn-red btn-xs" onclick="delCommande(\''+c._id+'\')">✕</button>':'')+'</div></div><div style="font-size:10px;color:var(--muted2);margin-top:3px">'+(c.lines||[]).map(l=>l.qte+'× '+l.nom).join(', ')+' · archivée '+(c.archivedAt||c.date)+'</div></div>').join('');
+}
+async function unarchiveCmd(id){if(!isAdmin())return notify('Admin uniquement','err');await fbUpd('commandes',id,{archived:false,statut:'attente'});notify('Commande désarchivée','ok');renderArchives();}
+
 function renderCommandes(){
   const cs={attente:'cs cs-attente',prete:'cs cs-prete',livree:'cs cs-livree',payee:'cs cs-payee',annulee:'cs cs-annulee'};
   const stats=document.getElementById('cmdStats');
   if(stats){const tv=S.commandes.reduce((s,c)=>s+(c.total||0),0);stats.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tv)}</div><div class="stat-label">CA Commandes</div></div><div class="stat blue"><div class="stat-val">${S.commandes.length}</div><div class="stat-label">Commandes</div></div><div class="stat green"><div class="stat-val">${S.commandes.filter(c=>c.statut==='livree').length}</div><div class="stat-label">Livrées</div></div><div class="stat teal"><div class="stat-val">${S.clients.length}</div><div class="stat-label">Clients</div></div>`;}
+  const _av=document.getElementById('cmdArchives');if(_av&&_av.style.display!=='none')renderArchives();
   const cr=document.getElementById('cmdRecentes');if(cr){const sorted=[...S.commandes].sort((a,b)=>(b.ts||0)-(a.ts||0));cr.innerHTML=sorted.length===0?'<div class="es">Aucune commande</div>':sorted.slice(0,15).map(c=>`<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between;align-items:start"><div><strong>${c.clientNom}</strong> — <span style="font-family:'Share Tech Mono';color:var(--gold)">${fmt(c.total)}</span></div><div style="display:flex;gap:3px;align-items:center"><span class="badge ${cs[c.statut]||'b-gray'}">${c.statut}</span><select style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:10px;padding:2px;border-radius:3px" onchange="updCommande('${c._id}',this.value)"><option value="attente" ${c.statut==='attente'?'selected':''}>⏳ Attente</option><option value="prete" ${c.statut==='prete'?'selected':''}>✅ Prête</option><option value="livree" ${c.statut==='livree'?'selected':''}>📦 Livrée</option><option value="payee" ${c.statut==='payee'?'selected':''}>💰 Payée</option><option value="annulee" ${c.statut==='annulee'?'selected':''}>❌ Annulée</option></select>${isAdmin()?`<button class="btn btn-red sm" style="padding:2px 5px" onclick="delCommande('${c._id}')">✕</button>`:''}</div></div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(c.lines||[]).map(l=>`${l.qte}× ${l.nom}`).join(', ')}</div><div style="font-size:10px;color:var(--muted)">${c.date}</div></div>`).join('');}
   const cl=document.getElementById('clientsList');if(cl)cl.innerHTML=S.clients.length===0?'<div class="es">Aucun client</div>':S.clients.map(c=>`<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><div><strong>${c.nom}</strong> <span class="badge ${c.type==='exterieur'?'b-teal':'b-purple'}" style="font-size:9px">${c.type}</span>${c.discord?`<span style="font-size:11px;color:var(--muted);margin-left:5px">💬 ${c.discord}</span>`:''}</div><span style="font-size:11px;color:var(--gold)">${S.commandes.filter(x=>x.clientId===c._id).length} cmds</span></div>${c.tel?`<div style="font-size:11px;color:var(--muted)">📞 ${c.tel}</div>`:''}</div>`).join('');
 }
