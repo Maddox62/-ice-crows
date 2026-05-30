@@ -10,10 +10,22 @@
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getFirestore,collection,doc,setDoc,getDoc,getDocs,onSnapshot,updateDoc,deleteDoc,addDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getAuth,signInAnonymously,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const cfg={apiKey:"AIzaSyCAWZS7ibt-oUFH5XqFy0LgVwszxvWhymc",authDomain:"ice-crows-mc.firebaseapp.com",projectId:"ice-crows-mc",storageBucket:"ice-crows-mc.firebasestorage.app",messagingSenderId:"1009094569089",appId:"1:1009094569089:web:ee52b42f4dfcce230f3180"};
-const app=initializeApp(cfg);const db=getFirestore(app);
+const app=initializeApp(cfg);const db=getFirestore(app);const auth=getAuth(app);
 window.__db=db;window.__fb={collection,doc,setDoc,getDoc,getDocs,onSnapshot,updateDoc,deleteDoc,addDoc};
-document.dispatchEvent(new Event("firebase-ready"));
+// Authentification anonyme : attribue un jeton Firebase valide avant tout accès BDD
+onAuthStateChanged(auth,(user)=>{
+  if(user){
+    document.dispatchEvent(new Event("firebase-ready"));
+  }
+});
+signInAnonymously(auth).catch((err)=>{
+  console.error("Erreur auth Firebase:",err);
+  // Fallback : si l'auth anonyme n'est pas activée, on prévient
+  const ld=document.getElementById('loader');
+  if(ld)ld.innerHTML='<div style="text-align:center;color:#e05555;padding:20px;max-width:400px"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-weight:600;margin-bottom:8px">Authentification Firebase requise</div><div style="font-size:13px;color:#888">L\'authentification anonyme doit être activée dans la console Firebase (Authentication → Sign-in method → Anonymous → Enable).</div></div>';
+});
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
