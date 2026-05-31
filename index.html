@@ -393,6 +393,36 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .tv-rank-val{font-size:24px;color:#f5b740;font-family:'JetBrains Mono';font-weight:700;}
 .tv-foot{position:absolute;bottom:20px;font-size:12px;color:#646b78;letter-spacing:1px;}
 
+
+/* ── FIL D'ACTIVITÉ ── */
+.feed-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);animation:feedIn .4s ease;}
+@keyframes feedIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.feed-ico{width:34px;height:34px;border-radius:9px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.feed-msg{font-size:13px;}
+.feed-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── ORGANIGRAMME ── */
+.org-tier{margin-bottom:4px;}
+.org-tier-label{font-family:'Oswald';font-size:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.org-members{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+.org-member{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px 16px;text-align:center;cursor:pointer;transition:transform .2s,border-color .2s;min-width:110px;}
+.org-member:hover{transform:translateY(-3px);border-color:var(--acc)!important;box-shadow:var(--sh-sm);}
+.org-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-weight:700;font-size:18px;color:#000;margin:0 auto 7px;}
+.org-name{font-size:13px;font-weight:600;}
+.org-rep{font-size:10px;color:var(--muted);margin-top:2px;}
+.org-connector{width:2px;height:18px;background:linear-gradient(var(--border2),transparent);margin:0 auto;}
+
+/* ── SONDAGES ── */
+.poll-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;}
+.poll-q{font-family:'Oswald';font-size:15px;font-weight:600;margin-bottom:12px;letter-spacing:.3px;}
+.poll-opt{position:relative;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:10px 13px;margin-bottom:7px;cursor:pointer;overflow:hidden;transition:border-color .15s;}
+.poll-opt:hover{border-color:var(--acc);}
+.poll-opt.poll-voted{border-color:var(--teal);}
+.poll-opt-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(255,106,26,.13);transition:width .5s cubic-bezier(.16,1,.3,1);}
+.poll-voted .poll-opt-bar{background:rgba(22,199,154,.15);}
+.poll-opt-content{position:relative;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.poll-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+
 </style>
 </head>
 <body>
@@ -453,6 +483,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <button class="ntab" data-tab="stats" onclick="goTab('stats')">📊 Stats</button>
   <button class="ntab" data-tab="classement" onclick="goTab('classement')">🏆 Classement</button>
   <button class="ntab" data-tab="club" onclick="goTab('club')">🏆 Club</button>
+  <button class="ntab" data-tab="social" onclick="goTab('social')">💬 Social</button>
   <button class="ntab" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
   <button class="ntab" data-tab="garage" onclick="goTab('garage')">🚗 Garage</button>
   <button class="ntab" data-tab="sanctions" onclick="goTab('sanctions')">⚖️ Sanctions</button>
@@ -472,6 +503,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <button class="stab" onclick="goSub('train')">🚂 Train</button>
   <button class="stab" onclick="goSub('fleeca')">🏦 Fleeca</button>
   <button class="stab" onclick="goSub('historique')">📋 Historique</button>
+  <button class="stab" onclick="goSub('simulateur')">🧮 Simulateur</button>
 </div>
 
 <!-- ═══ DASHBOARD ═══ -->
@@ -524,6 +556,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ MEMBRES ═══ -->
 <div class="page" id="page-membres">
   <div class="card" style="margin-bottom:14px"><input id="membreSearch" placeholder="🔍 Rechercher un membre (nom, grade, discord)..." oninput="renderMembres()"></div>
+  <div class="card" style="margin-bottom:14px"><div class="card-title">🏛️ Organigramme du club</div><div id="orgChart"></div></div>
   <div id="membresGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:14px;"></div>
   <div class="card" id="addMembreCard">
     <div class="card-title">➕ Ajouter un Membre</div>
@@ -668,6 +701,28 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
       </div>
       <div class="scr"><table class="tbl"><thead><tr><th>Type</th><th>Contenu</th><th>Valeur</th><th>MC</th><th>Partage</th><th>Participants</th><th>Date</th><th></th></tr></thead><tbody id="globalHist"></tbody></table></div></div>
   </div>
+  <div class="subpage" id="sp-simulateur">
+    <div class="braq-layout">
+      <div class="card">
+        <div class="card-title">🧮 Simulateur de répartition</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Calcule qui touche quoi AVANT de lancer le coup</p>
+        <div class="form-group"><label class="form-label">Montant du butin ($)</label><input type="number" id="simMontant" placeholder="100000" oninput="runSimulation()"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn btn-ghost btn-xs" onclick="simPreset(50000)">50k</button>
+          <button class="btn btn-ghost btn-xs" onclick="simPreset(100000)">100k</button>
+          <button class="btn btn-ghost btn-xs" onclick="simPreset(250000)">250k</button>
+          <button class="btn btn-ghost btn-xs" onclick="simPreset(500000)">500k</button>
+          <button class="btn btn-ghost btn-xs" onclick="simPreset(1000000)">1M</button>
+        </div>
+        <label class="form-label">Participants</label>
+        <div id="simParticipants" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:260px;overflow-y:auto;background:var(--bg3);padding:8px;border-radius:6px;border:1px solid var(--border)"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="card"><div class="card-title">📊 Répartition simulée</div><div id="simResult"><div class="es">Entrez un montant et sélectionnez des participants</div></div></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ═══ DROGUES ═══ -->
@@ -913,6 +968,33 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="card">
     <div class="card-title">🏆 Trophées du club</div>
     <div id="achievementsList"></div>
+  </div>
+</div>
+
+<!-- ═══ SOCIAL ═══ -->
+<div class="page" id="page-social">
+  <div class="g2">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📡 Fil d'activité du club</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Ce que font les membres, en temps réel</p>
+        <div id="feedList" class="scr" style="max-height:500px"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">🗳️ Créer un sondage</div>
+        <div class="form-group"><label class="form-label">Question</label><input id="pollQuestion" placeholder="Prochaine cible du club ?"></div>
+        <label class="form-label">Options</label>
+        <div id="pollOptions"></div>
+        <button class="btn btn-ghost btn-sm" onclick="addPollOption()" style="margin-bottom:10px">+ Option</button>
+        <button class="btn btn-blue" style="width:100%" onclick="createPoll()">🗳️ Lancer le sondage</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Sondages</div>
+        <div id="pollsList"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1228,7 +1310,7 @@ function getVisibleCommandes(){
 
 // ═══ STATE ═══
 let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1};
-let S={mcPct:60,grades:[],membres:[],ops:[],stock:[],stockLog:[],events:[],vehicles:[],sanctions:[],missions:[],reglement:[],items:[],drugs:[],armes:[],commandes:[],clients:[],bankMoves:[],perms:{},daily:{superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}},weekly:{bijouterie:0,humanlab:0},annonces:[],connexions:[]};
+let S={mcPct:60,grades:[],membres:[],ops:[],stock:[],stockLog:[],events:[],vehicles:[],sanctions:[],missions:[],reglement:[],items:[],drugs:[],armes:[],commandes:[],clients:[],bankMoves:[],perms:{},daily:{superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}},weekly:{bijouterie:0,humanlab:0},annonces:[],connexions:[],feed:[],polls:[]};
 let currentUser=null,db,FB,itemsQte={},currentItemFilter='tous',currentSub='cambriolage';
 let cmdLines=[];let dragSrcGrade=null;
 
@@ -1241,7 +1323,7 @@ document.addEventListener('firebase-ready',async()=>{
 });
 
 async function loadAll(){
-  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions'};S.objective=null;
+  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls'};S.objective=null;
   for(const[col,key]of Object.entries(cols)){try{const snap=await FB.getDocs(FB.collection(db,col));S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));}catch(e){}}
   S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));
   try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);}}catch(e){}
@@ -1264,6 +1346,8 @@ function setupListeners(){
   FB.onSnapshot(FB.doc(db,'config','daily'),snap=>{if(snap.exists()){Object.assign(S.daily,snap.data());renderLimits();}});
   FB.onSnapshot(FB.doc(db,'config','weekly'),snap=>{if(snap.exists()){Object.assign(S.weekly,snap.data());renderLimits();}});
   setupActivityListener();
+  FB.onSnapshot(FB.collection(db,'feed'),snap=>{S.feed=[];snap.forEach(d=>S.feed.push({...d.data(),_id:d.id}));renderFeed();});
+  FB.onSnapshot(FB.collection(db,'polls'),snap=>{S.polls=[];snap.forEach(d=>S.polls.push({...d.data(),_id:d.id}));renderPolls();});
   FB.onSnapshot(FB.collection(db,'annonces'),snap=>{S.annonces=[];snap.forEach(d=>S.annonces.push({...d.data(),_id:d.id}));renderAnnonces();});
   FB.onSnapshot(FB.collection(db,'connexions'),snap=>{S.connexions=[];snap.forEach(d=>S.connexions.push({...d.data(),_id:d.id}));renderConnexions();});
   FB.onSnapshot(FB.collection(db,'online'),snap=>{const u=[];snap.forEach(d=>{const x=d.data();if(Date.now()-(x.ts||0)<90000)u.push(x);});document.getElementById('onlineDiv').innerHTML=u.map(u=>`<div class="onpill"><div class="ondot"></div>${u.name}</div>`).join('');});
@@ -1448,6 +1532,147 @@ function renderRunWidget(){
 
 
 
+
+
+// ════════════════════════════════════════════
+//  FONCTIONNALITÉS PREMIUM
+// ════════════════════════════════════════════
+
+// ── 1. SIMULATEUR DE BRAQUAGE ──
+function renderSimulator(){
+  var el=document.getElementById('simParticipants');if(!el)return;
+  el.innerHTML=S.membres.map(function(m){
+    var g=getGrade(m.gradeId);
+    return '<label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 9px;border-radius:6px;background:var(--card2);font-size:12px"><input type="checkbox" value="'+m._id+'" onchange="runSimulation()" style="width:14px;height:14px;accent-color:var(--acc)"> '+m.name+' '+(g?gradeBadge(g,'font-size:8px'):'')+'</label>';
+  }).join('');
+}
+function runSimulation(){
+  var montant=+document.getElementById('simMontant').value||0;
+  var pids=[].slice.call(document.querySelectorAll('#simParticipants input:checked')).map(function(c){return c.value;});
+  var out=document.getElementById('simResult');if(!out)return;
+  if(montant<=0||pids.length===0){out.innerHTML='<div class="es">Entrez un montant et sélectionnez des participants pour simuler</div>';return;}
+  var res=distribute(montant,pids);
+  var h='<div class="distrib-mc"><div class="distrib-mc-lbl">⚡ Part MC ('+S.mcPct+'%)</div><div class="distrib-mc-amt">'+fmt(res.mc)+'</div></div>';
+  h+='<div style="font-size:12px;color:var(--muted);margin-bottom:9px">À distribuer : <strong style="color:var(--text)">'+fmt(res.toShare)+'</strong> entre '+pids.length+' membre(s)</div>';
+  res.shares.sort(function(a,b){return b.amount-a.amount;}).forEach(function(sh){
+    var m=getMembre(sh.membreId);var g=m?getGrade(m.gradeId):null;
+    var pctOfShare=res.toShare>0?Math.round(sh.amount/res.toShare*100):0;
+    h+='<div class="distrib-row"><div style="display:flex;align-items:center;gap:8px">'+(m?m.name:'?')+' '+(g?gradeBadge(g,'font-size:8px'):'')+'<span style="font-size:10px;color:var(--muted)">×'+(g?g.coeff:1)+'</span></div><div style="text-align:right"><div class="distrib-amt">'+fmt(sh.amount)+'</div><div style="font-size:9px;color:var(--muted)">'+pctOfShare+'% du partage</div></div></div>';
+  });
+  // Comparaison rapide : par membre moyen
+  var avg=Math.round(res.toShare/pids.length);
+  h+='<div style="margin-top:12px;padding:11px;background:var(--bg3);border-radius:6px;font-size:12px;color:var(--muted2)">💡 Moyenne par membre : <strong style="color:var(--teal)">'+fmt(avg)+'</strong> · Le club encaisse <strong style="color:var(--acc)">'+fmt(res.mc)+'</strong></div>';
+  out.innerHTML=h;
+}
+function simPreset(v){document.getElementById('simMontant').value=v;runSimulation();}
+
+// ── 2. FIL D'ACTIVITÉ TEMPS RÉEL (persistant) ──
+function pushFeed(msg,icon){
+  if(!currentUser)return;
+  try{
+    fbAdd('feed',{msg:msg,icon:icon||'⚡',who:currentUser.name,ts:Date.now()});
+  }catch(e){}
+}
+function renderFeed(){
+  var el=document.getElementById('feedList');if(!el)return;
+  var list=[].concat(S.feed||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);}).slice(0,40);
+  if(!list.length){el.innerHTML='<div class="es">Aucune activité récente</div>';return;}
+  el.innerHTML=list.map(function(f){
+    var ago=timeAgo(f.ts);
+    return '<div class="feed-item"><div class="feed-ico">'+(f.icon||'⚡')+'</div><div class="feed-body"><div class="feed-msg">'+f.msg+'</div><div class="feed-meta">'+f.who+' · '+ago+'</div></div></div>';
+  }).join('');
+}
+function timeAgo(ts){
+  var s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return 'à l\u2019instant';
+  if(s<3600)return Math.floor(s/60)+' min';
+  if(s<86400)return Math.floor(s/3600)+' h';
+  return Math.floor(s/86400)+' j';
+}
+// Nettoyage : garder les 60 derniers
+async function trimFeed(){
+  if(!isAdmin())return;
+  var list=[].concat(S.feed||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  for(var i=60;i<list.length;i++){try{await fbDel('feed',list[i]._id);}catch(e){}}
+}
+
+// ── 3. ORGANIGRAMME ──
+function renderOrgChart(){
+  var el=document.getElementById('orgChart');if(!el)return;
+  // Grouper membres par grade, trié par ordre de grade
+  var grades=[].concat(S.grades).sort(function(a,b){return (a.order||0)-(b.order||0);});
+  if(!grades.length){el.innerHTML='<div class="es">Aucun grade défini</div>';return;}
+  var h='';
+  grades.forEach(function(g,i){
+    var members=S.membres.filter(function(m){return m.gradeId===g._id;});
+    h+='<div class="org-tier">';
+    h+='<div class="org-tier-label">'+gradeBadge(g)+' <span style="font-size:10px;color:var(--muted)">×'+(g.coeff||1)+' · '+members.length+'</span></div>';
+    h+='<div class="org-members">';
+    if(members.length){
+      members.forEach(function(m){
+        var rep=memberReputation(m._id);var lvl=repLevel(rep);
+        h+='<div class="org-member" onclick="openMemberProfile(\''+m._id+'\')" style="border-color:'+(g.color&&g.color.charAt(0)==='#'?g.color:'var(--border2)')+'44"><div class="org-avatar" style="background:linear-gradient(135deg,'+(g.color&&g.color.charAt(0)==='#'?g.color:'var(--acc)')+',var(--gold))">'+m.name.charAt(0).toUpperCase()+'</div><div class="org-name">'+m.name+'</div><div class="org-rep">'+lvl.ico+' '+rep+' pts</div></div>';
+      });
+    }else{
+      h+='<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px">Aucun membre</div>';
+    }
+    h+='</div></div>';
+    if(i<grades.length-1)h+='<div class="org-connector"></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── 4. SONDAGES DU CLUB ──
+async function createPoll(){
+  if(!currentUser)return notify('Connectez-vous','err');
+  var q=document.getElementById('pollQuestion').value.trim();
+  var opts=[].slice.call(document.querySelectorAll('.poll-opt-input')).map(function(i){return i.value.trim();}).filter(function(v){return v;});
+  if(!q||opts.length<2)return notify('Question + au moins 2 options requises','err');
+  await fbAdd('polls',{question:q,options:opts,votes:{},auteur:currentUser.name,closed:false,date:nowStr(),ts:Date.now()});
+  document.getElementById('pollQuestion').value='';
+  document.getElementById('pollOptions').innerHTML='';
+  addPollOption();addPollOption();
+  notify('🗳️ Sondage créé !','ok');
+}
+var pollOptCount=0;
+function addPollOption(){
+  var c=document.getElementById('pollOptions');if(!c)return;
+  pollOptCount++;
+  var d=document.createElement('div');d.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+  d.innerHTML='<input class="poll-opt-input" placeholder="Option '+pollOptCount+'"><button class="btn btn-ghost btn-xs" onclick="this.parentElement.remove()">✕</button>';
+  c.appendChild(d);
+}
+async function votePoll(pollId,optIdx){
+  if(!currentUser)return notify('Connectez-vous','err');
+  var p=S.polls.find(function(x){return x._id===pollId;});if(!p)return;
+  var votes=p.votes||{};
+  votes[currentUser._id]=optIdx;
+  await fbUpd('polls',pollId,{votes:votes});
+  notify('✅ Vote enregistré','ok');
+}
+async function closePoll(pollId){if(!isAdmin())return;await fbUpd('polls',pollId,{closed:true});}
+async function delPoll(pollId){if(!isAdmin())return;if(!confirm('Supprimer ce sondage ?'))return;await fbDel('polls',pollId);}
+function renderPolls(){
+  var el=document.getElementById('pollsList');if(!el)return;
+  var list=[].concat(S.polls||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  if(!list.length){el.innerHTML='<div class="es">Aucun sondage en cours</div>';return;}
+  el.innerHTML=list.map(function(p){
+    var votes=p.votes||{};
+    var counts=p.options.map(function(_,i){return Object.values(votes).filter(function(v){return v===i;}).length;});
+    var total=counts.reduce(function(s,c){return s+c;},0);
+    var myVote=currentUser?votes[currentUser._id]:undefined;
+    var h='<div class="poll-card"><div class="poll-q">'+(p.closed?'🔒 ':'🗳️ ')+p.question+'</div>';
+    p.options.forEach(function(opt,i){
+      var c=counts[i];var pct=total>0?Math.round(c/total*100):0;
+      var voted=myVote===i;
+      h+='<div class="poll-opt'+(voted?' poll-voted':'')+'"'+(!p.closed&&currentUser?' onclick="votePoll(\''+p._id+'\','+i+')"':'')+'>'
+        +'<div class="poll-opt-bar" style="width:'+pct+'%"></div>'
+        +'<div class="poll-opt-content"><span>'+(voted?'✓ ':'')+opt+'</span><span class="mono">'+pct+'% ('+c+')</span></div></div>';
+    });
+    h+='<div class="poll-foot"><span>'+total+' vote(s) · par '+p.auteur+'</span>'+(isAdmin()?'<span>'+(p.closed?'':'<button class="btn btn-ghost btn-xs" onclick="closePoll(\''+p._id+'\')">Clôturer</button> ')+'<button class="btn btn-red btn-xs" onclick="delPoll(\''+p._id+'\')">✕</button></span>':'')+'</div></div>';
+    return h;
+  }).join('');
+}
 
 // ════════════════════════════════════════════
 //  TROPHÉES / SUCCÈS DÉBLOCABLES
@@ -2078,7 +2303,7 @@ async function submitItemBraq(type){
   if(type==='bijouterie'){S.weekly.bijouterie=(S.weekly.bijouterie||0)+1;saveWeekly();}
   if(type==='humanlab'){S.weekly.humanlab=(S.weekly.humanlab||0)+1;saveWeekly();}
   for(const it of items)addToStock(it.nom,it.qte,it.prixUnit,typeLabel,true);
-  document.getElementById(c.resultId).style.display='block';adjustBraqLayouts();
+  document.getElementById(c.resultId).style.display='block';adjustBraqLayouts();pushFeed('a déclaré un '+type+' de '+fmt(valEst),'🔫');
   const _shareRows=pids.length>0?shares.map(function(sh){const m2=getMembre(sh.membreId);const g2=m2?getGrade(m2.gradeId):null;return'<div class="distrib-row"><div>'+(m2?m2.name:'?')+' '+(g2?'<span class="badge '+gc(g2.color)+'">'+g2.name+'</span>':'')+'</div><div class="distrib-amt">'+fmt(sh.amount)+'</div></div>';}).join(''):'<p style="color:var(--muted2);font-size:12px">Aucun participant sélectionné</p>';
   const _itemRows=items.map(function(i){return'<div style="font-size:11px;color:var(--muted2);padding:2px 0">'+i.qte+'× '+i.nom+' → stock</div>';}).join('');
   document.getElementById(c.rcId).innerHTML='<div class="distrib-mc" style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2)"><div class="distrib-mc-lbl" style="color:var(--teal)">📦 STOCK + SALAIRES EN ATTENTE</div><div class="distrib-mc-amt" style="color:var(--teal)">'+fmt(valEst)+'</div></div><p style="color:var(--muted2);font-size:12px;margin-bottom:8px">Salaires calculés — part MC encaissée à la vente groupée</p>'+_shareRows+_itemRows;
@@ -2101,7 +2326,7 @@ async function submitArgent(type){
   if(type==='superette'){S.daily.superette=(S.daily.superette||0)+1;if(!S.daily.supHist)S.daily.supHist=[];S.daily.supHist.unshift({montant,res,heure:nowTime()});saveDaily();}
   if(type==='ammu'){S.daily.ammu=(S.daily.ammu||0)+1;if(!S.daily.ammuHist)S.daily.ammuHist=[];S.daily.ammuHist.unshift({montant,res,heure:nowTime()});saveDaily();}
   document.getElementById(type+'Result').style.display='block';document.getElementById(type+'RC').innerHTML=renderDistrib(res);
-  document.getElementById(mIds[type]).value='';notify(`✅ ${labels[type]} enregistré !`,'ok');
+  document.getElementById(mIds[type]).value='';notify(`✅ ${labels[type]} enregistré !`,'ok');pushFeed('a rapporté '+fmt(montant)+' ('+type+')','💵');
 }
 async function submitAtm(){
   if(!canAccessTab('braquages'))return notify('Accès refusé','err');
@@ -2153,7 +2378,7 @@ async function submitDrug(){
   if(!qte||qte<=0)return notify('Quantité invalide','err');if(!prix||prix<=0)return notify('Prix invalide','err');if(!pids.length)return notify('Sélectionnez des vendeurs','err');
   const total=qte*prix;const res=distribute(total,pids);
   await fbAdd('ops',{type:'drogue',typeLabel:'💊 Drogue',montant:total,contenu:`${qte} pochons × ${fmt(prix)}`,drugType:typeNom,qte,prixUnit:prix,notes,mc:res.mc,toShare:res.toShare,shares:res.shares,date:nowStr(),ts:Date.now()});
-  document.getElementById('drugResult').style.display='block';document.getElementById('drugRC').innerHTML=renderDistrib(res);
+  pushFeed('a vendu de la drogue pour '+fmt(montant),'💊');document.getElementById('drugResult').style.display='block';document.getElementById('drugRC').innerHTML=renderDistrib(res);
   document.getElementById('drugQte').value='';document.getElementById('drugPrix').value='';document.getElementById('drugTotal').textContent='$0';
   broadcastActivity(`💊 Vente drogue — ${fmt(total)}`);notify('✅ Vente drogue enregistrée !','ok');
 }
@@ -2292,7 +2517,7 @@ async function submitCommande(){
   const total=lines.reduce((s,l)=>s+l.total,0);const client=getClient(clientId);
   await fbAdd('commandes',{clientId,clientNom:client?client.nom:'?',lines,total,statut:document.getElementById('cmdStatut').value,notes:document.getElementById('cmdNotes').value,by:currentUser?currentUser.name:'?',createdBy:currentUser?currentUser._id:'',date:nowStr(),ts:Date.now()});
   document.getElementById('cmdLines').innerHTML='';document.getElementById('cmdTotal').textContent='$0';cmdLineCount=0;
-  document.getElementById('cmdNotes').value='';notify('✅ Commande enregistrée !','ok');
+  document.getElementById('cmdNotes').value='';pushFeed('a enregistré une commande de '+fmt(total),'🛒');notify('✅ Commande enregistrée !','ok');
 }
 
 function isArchived(c){return c.statut==='terminee';}
@@ -2414,7 +2639,7 @@ async function clearOps(){if(!isAdmin())return notify('Admin uniquement','err');
 function exportSal(){const totals=computeSal();const mc=S.ops.reduce((s,o)=>s+(o.mc||0),0);let txt='=== ICE CROWS MC — SALAIRES ===\n'+nowStr()+'\n\n';totals.forEach(t=>{const m=getMembre(t.id);const g=m?getGrade(m.gradeId):null;txt+=`${m?m.name:'?'} [${g?g.name:'?'}] : ${fmt(t.total)}\n`;});txt+=`\nCAISSE MC : ${fmt(mc)}`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='salaires_icecrows.txt';a.click();}
 // ═══ NAVIGATION ═══
 const TABS=['dashboard','membres','braquages','drogues','stock','ventestock','armurerie','commandes','banque','salaires','stats','agenda','garage','sanctions','missions','reglement','config','itemsbdd'];
-const SUBS=['cambriolage','bijouterie','humanlab','superette','ammu','atm','conteneur','train','fleeca','historique'];
+const SUBS=['cambriolage','bijouterie','humanlab','superette','ammu','atm','conteneur','train','fleeca','historique','simulateur'];
 let currentTab='dashboard';
 function goTab(name){
   if(name==='config'&&!isAdmin())return notify('Config réservée aux admins','err');
@@ -2425,6 +2650,8 @@ function goTab(name){
   const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');
   if(name==='classement')renderClassement();
   if(name==='club'){renderAchievements();renderHeatmap();renderWeekCard();}
+  if(name==='social'){renderFeed();renderPolls();if(document.getElementById('pollOptions')&&!document.querySelectorAll('.poll-opt-input').length){addPollOption();addPollOption();}}
+  if(name==='membres')renderOrgChart();
   if(name==='commandes')markCmdSeen();
   document.querySelector(`.ntab[data-tab="${name}"]`)?.classList.add('active');
   const sub=document.getElementById('sub-braquages');
@@ -2452,7 +2679,7 @@ function goSub(sub){
   if(sub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(sub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
   if(sub==='humanlab')buildItemSelector('hlItemsList','humanlab','hlTotal','hlDetail');
-  renderBraqInfo(sub);adjustBraqLayouts();
+  renderBraqInfo(sub);if(sub==='simulateur')renderSimulator();adjustBraqLayouts();
 }
 
 // ═══ REFRESH SELECTS ═══
@@ -2486,7 +2713,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
