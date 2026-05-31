@@ -223,7 +223,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .tbl tbody tr:hover td{background:rgba(255,106,26,.04);}
 
 /* ── PARTICIPANT GRID ── */
-.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:160px;overflow-y:auto;background:var(--bg3);padding:8px;border-radius:var(--r);border:1px solid var(--border);}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:220px;overflow-y:auto;background:var(--bg3);padding:8px;border-radius:var(--r);border:1px solid var(--border);}
 .pgrid label{display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 9px;border-radius:var(--r-sm);background:var(--card2);font-size:12px;transition:background .12s;}
 .pgrid label:hover{background:var(--border);}
 .pgrid input[type=checkbox]{width:14px;height:14px;accent-color:var(--acc);flex-shrink:0;}
@@ -318,6 +318,16 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 /* ── Sécurité layout : formulaire+résultat caché = pleine largeur centrée ── */
 .g2.solo-wide{grid-template-columns:1fr;max-width:900px;}
 
+
+/* ── INSIGHTS (intelligence des données) ── */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+.insight-card{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;transition:transform .2s,border-color .2s;}
+.insight-card:hover{transform:translateY(-3px);border-color:var(--border2);}
+.insight-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.insight-val{font-family:'Oswald';font-size:22px;font-weight:700;line-height:1;letter-spacing:.5px;}
+.insight-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-top:3px;}
+.insight-sub{font-size:11px;color:var(--muted2);margin-top:3px;}
+
 </style>
 </head>
 <body>
@@ -401,6 +411,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ DASHBOARD ═══ -->
 <div class="page active" id="page-dashboard">
   <div id="objDisplay" style="margin-bottom:14px"></div>
+  <div id="insights" style="margin-bottom:16px"></div>
   <div id="runWidget"></div>
   <div id="smartAlerts"></div>
   <div class="card" style="margin-bottom:14px">
@@ -463,7 +474,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
       <div class="card">
         <div class="card-title">🏠 Cambriolage <span class="lbadge lok" id="limCamb">0/6</span></div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:6px">Items — 6 par membre/jour · Déclarant : <strong id="cambWho" style="color:var(--acc)">—</strong></p>
-        <div class="form-group"><label class="form-label">Items récupérés</label><div id="cambItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;"></div></div>
+        <div class="form-group"><label class="form-label">Items récupérés</label><div id="cambItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:340px;overflow-y:auto;"></div></div>
         <div class="totbox"><div style="display:flex;justify-content:space-between"><span style="color:var(--muted);font-size:13px">Total :</span><span style="font-family:'Share Tech Mono';font-size:18px;color:var(--gold)" id="cambTotal">$0</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="cambDetail">Sélectionnez des items</div></div>
         <div class="form-group"><label class="form-label">Participants (pour les salaires)</label><div class="pgrid" id="cambPart"></div></div>
         <div class="form-group"><label class="form-label">Notes</label><input id="cambNotes" placeholder="Lieu..."></div>
@@ -477,7 +488,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
       <div class="card">
         <div class="card-title">💎 Bijouterie <span class="lbadge lok" id="limBij">0/1 sem</span></div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:10px">Items — 1/semaine pour le groupe</p>
-        <div class="form-group"><label class="form-label">Items récupérés</label><div id="bijItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;"></div></div>
+        <div class="form-group"><label class="form-label">Items récupérés</label><div id="bijItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:340px;overflow-y:auto;"></div></div>
         <div class="totbox"><div style="display:flex;justify-content:space-between"><span style="color:var(--muted);font-size:13px">Total :</span><span style="font-family:'Share Tech Mono';font-size:18px;color:var(--gold)" id="bijTotal">$0</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="bijDetail">Sélectionnez des items</div></div>
         <div class="form-group"><label class="form-label">Participants (pour les salaires)</label><div class="pgrid" id="bijPart"></div></div>
         <div class="form-group"><label class="form-label">Notes</label><input id="bijNotes" placeholder="Infos..."></div>
@@ -491,7 +502,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
       <div class="card">
         <div class="card-title">🧪 HumanLab <span class="lbadge lok" id="limHL">0/1 sem</span></div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:10px">Items — 1/semaine pour le groupe</p>
-        <div class="form-group"><label class="form-label">Items récupérés</label><div id="hlItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;"></div></div>
+        <div class="form-group"><label class="form-label">Items récupérés</label><div id="hlItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:340px;overflow-y:auto;"></div></div>
         <div class="totbox"><div style="display:flex;justify-content:space-between"><span style="color:var(--muted);font-size:13px">Total :</span><span style="font-family:'Share Tech Mono';font-size:18px;color:var(--gold)" id="hlTotal">$0</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="hlDetail">Sélectionnez des items</div></div>
         <div class="form-group"><label class="form-label">Participants (pour les salaires)</label><div class="pgrid" id="hlPart"></div></div>
         <div class="form-group"><label class="form-label">Notes</label><input id="hlNotes" placeholder="Infos..."></div>
@@ -1356,6 +1367,80 @@ function renderRunWidget(){
 }
 
 
+
+// ════════════════════════════════════════════
+//  INTELLIGENCE DES DONNÉES
+// ════════════════════════════════════════════
+
+// Somme du butin sur une fenêtre [startTs, endTs)
+function sumOpsBetween(a,b){
+  return S.ops.filter(function(o){return (o.ts||0)>=a&&(o.ts||0)<b;}).reduce(function(s,o){return s+(o.montant||0);},0);
+}
+// Tendance % cette semaine vs semaine précédente
+function weekTrend(){
+  var now=Date.now();
+  var thisWeek=sumOpsBetween(now-7*864e5,now);
+  var lastWeek=sumOpsBetween(now-14*864e5,now-7*864e5);
+  if(lastWeek===0)return{pct:thisWeek>0?100:0,up:thisWeek>0,thisWeek:thisWeek,lastWeek:lastWeek};
+  var pct=Math.round((thisWeek-lastWeek)/lastWeek*100);
+  return{pct:Math.abs(pct),up:pct>=0,thisWeek:thisWeek,lastWeek:lastWeek};
+}
+// Projection objectif : à ce rythme, atteint dans X jours
+function objectiveProjection(){
+  if(!S.objective||!S.objective.active)return null;
+  var o=S.objective;
+  var cur=o.type==='mc'?S.ops.reduce(function(s,x){return s+(x.mc||0);},0):o.type==='total'?S.ops.reduce(function(s,x){return s+(x.montant||0);},0):S.ops.length;
+  var target=o.target;
+  if(cur>=target)return{done:true,pct:100};
+  // rythme = gains des 7 derniers jours / 7
+  var now=Date.now();
+  var last7=o.type==='ops'?S.ops.filter(function(x){return (x.ts||0)>=now-7*864e5;}).length:sumOpsBetween(now-7*864e5,now);
+  if(o.type==='mc'){var ratio=S.ops.length?S.ops.reduce(function(s,x){return s+(x.mc||0);},0)/S.ops.reduce(function(s,x){return s+(x.montant||0)||1;},0):0.6;last7=sumOpsBetween(now-7*864e5,now)*ratio;}
+  var perDay=last7/7;
+  var remaining=target-cur;
+  var days=perDay>0?Math.ceil(remaining/perDay):null;
+  return{done:false,pct:Math.round(cur/target*100),cur:cur,target:target,perDay:perDay,days:days,type:o.type};
+}
+
+// Panneau d'intelligence sur le dashboard
+function renderInsights(){
+  var el=document.getElementById('insights');if(!el)return;
+  var t=weekTrend();
+  var proj=objectiveProjection();
+  var now=Date.now();
+  var todayStart=new Date();todayStart.setHours(0,0,0,0);
+  var todayTotal=sumOpsBetween(todayStart.getTime(),now);
+  // meilleur jour des 30 derniers
+  var bestDay=0,bestDayLabel='';
+  for(var i=0;i<30;i++){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);var s=d.getTime();var v=sumOpsBetween(s,s+864e5);if(v>bestDay){bestDay=v;bestDayLabel=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});}}
+
+  var cards='';
+  // Tendance hebdo
+  cards+='<div class="insight-card"><div class="insight-ico" style="background:'+(t.up?'rgba(22,199,154,.15)':'rgba(239,68,68,.15)')+';color:'+(t.up?'var(--teal)':'var(--red)')+'">'+(t.up?'📈':'📉')+'</div>'
+    +'<div><div class="insight-val" style="color:'+(t.up?'var(--teal)':'var(--red)')+'">'+(t.up?'+':'-')+t.pct+'%</div>'
+    +'<div class="insight-lbl">vs semaine dernière</div><div class="insight-sub">'+fmt(t.thisWeek)+' cette semaine</div></div></div>';
+  // Aujourd'hui
+  cards+='<div class="insight-card"><div class="insight-ico" style="background:rgba(245,183,64,.15);color:var(--gold)">💰</div>'
+    +'<div><div class="insight-val" style="color:var(--gold)">'+fmt(todayTotal)+'</div><div class="insight-lbl">Butin aujourd\u2019hui</div><div class="insight-sub">Record : '+fmt(bestDay)+(bestDayLabel?' ('+bestDayLabel+')':'')+'</div></div></div>';
+  // Projection objectif
+  if(proj&&!proj.done){
+    cards+='<div class="insight-card"><div class="insight-ico" style="background:rgba(77,127,255,.15);color:var(--blue)">🎯</div>'
+      +'<div><div class="insight-val" style="color:var(--blue)">'+proj.pct+'%</div><div class="insight-lbl">Objectif semaine</div>'
+      +'<div class="insight-sub">'+(proj.days!=null?'≈ '+proj.days+' jour(s) à ce rythme':'Aucune activité récente')+'</div></div></div>';
+  }else if(proj&&proj.done){
+    cards+='<div class="insight-card"><div class="insight-ico" style="background:rgba(22,199,154,.15);color:var(--teal)">🏆</div>'
+      +'<div><div class="insight-val" style="color:var(--teal)">100%</div><div class="insight-lbl">Objectif atteint !</div><div class="insight-sub">Bravo au club</div></div></div>';
+  }
+  // Membre le plus actif (semaine)
+  var contrib=memberContribution('week');
+  if(contrib.length&&contrib[0].gains>0){
+    var top=getMembre(contrib[0].id);
+    cards+='<div class="insight-card"><div class="insight-ico" style="background:rgba(168,85,247,.15);color:var(--purple)">⭐</div>'
+      +'<div><div class="insight-val" style="color:var(--purple)">'+(top?top.name:'?')+'</div><div class="insight-lbl">Top contributeur (7j)</div><div class="insight-sub">'+fmt(contrib[0].gains)+' générés</div></div></div>';
+  }
+  el.innerHTML='<div class="insights-grid">'+cards+'</div>';
+}
+
 // ════════════════════════════════════════════
 //  FEATURES SUPPLÉMENTAIRES (v2)
 // ════════════════════════════════════════════
@@ -2138,7 +2223,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
