@@ -304,6 +304,20 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .cmd-member-sub{font-size:12px;color:var(--muted2);margin-top:2px;}
 .cmd-member-actions{display:flex;gap:8px;flex-wrap:wrap;}
 
+
+
+/* ── BRAQUAGES : layout pleine largeur, formulaire large + résultat à côté ── */
+.braq-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+.braq-layout > .card:first-child{min-width:0;}
+.braq-layout > .card[style*="display:none"]{display:none!important;}
+/* Quand le résultat est caché, le formulaire occupe tout, joliment */
+.braq-single{max-width:none;}
+@media(max-width:880px){.braq-layout{grid-template-columns:1fr;}}
+
+
+/* ── Sécurité layout : formulaire+résultat caché = pleine largeur centrée ── */
+.g2.solo-wide{grid-template-columns:1fr;max-width:900px;}
+
 </style>
 </head>
 <body>
@@ -445,7 +459,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ BRAQUAGES ═══ -->
 <div class="page" id="page-braquages">
   <div class="subpage active" id="sp-cambriolage">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card">
         <div class="card-title">🏠 Cambriolage <span class="lbadge lok" id="limCamb">0/6</span></div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:6px">Items — 6 par membre/jour · Déclarant : <strong id="cambWho" style="color:var(--acc)">—</strong></p>
@@ -459,7 +473,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     </div>
   </div>
   <div class="subpage" id="sp-bijouterie">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card">
         <div class="card-title">💎 Bijouterie <span class="lbadge lok" id="limBij">0/1 sem</span></div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:10px">Items — 1/semaine pour le groupe</p>
@@ -473,7 +487,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     </div>
   </div>
   <div class="subpage" id="sp-humanlab">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card">
         <div class="card-title">🧪 HumanLab <span class="lbadge lok" id="limHL">0/1 sem</span></div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:10px">Items — 1/semaine pour le groupe</p>
@@ -487,7 +501,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     </div>
   </div>
   <div class="subpage" id="sp-superette">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card">
         <div class="card-title">🏪 Superette</div>
         <div style="margin-bottom:10px"><div class="dlrow"><div class="dot" id="sdot"></div><span>Groupe : <strong id="sc">0</strong>/<span id="limSup">2</span> aujourd'hui</span></div><div class="pbar"><div class="pfill" id="sp" class="pteal"></div></div></div>
@@ -500,7 +514,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     <div class="card" style="margin-top:14px"><div class="card-title">📋 Historique du Jour</div><div class="scr"><table class="tbl"><thead><tr><th>Montant</th><th>MC</th><th>Partage</th><th>Participants</th><th>Heure</th></tr></thead><tbody id="supHist"></tbody></table></div></div>
   </div>
   <div class="subpage" id="sp-ammu">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card">
         <div class="card-title">🔧 Ammunation</div>
         <div style="margin-bottom:10px"><div class="dlrow"><div class="dot" id="adot"></div><span>Groupe : <strong id="ac">0</strong>/<span id="limAmmu">2</span> aujourd'hui</span></div><div class="pbar"><div class="pfill" id="ap" class="pred"></div></div></div>
@@ -525,7 +539,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     </div>
   </div>
   <div class="subpage" id="sp-conteneur">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card">
         <div class="card-title">📦 Conteneur — 6 max/membre/jour</div>
         <p style="color:var(--muted);font-size:11px;margin-bottom:8px">Déclarant : <strong id="contWho" style="color:var(--acc)">—</strong></p>
@@ -542,13 +556,13 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     <div class="card" style="margin-top:14px"><div class="card-title">📋 Historique</div><div class="scr"><table class="tbl"><thead><tr><th>Membre</th><th>Type</th><th>Contenu</th><th>Valeur</th><th>MC</th><th>Participants</th><th>Date</th></tr></thead><tbody id="contHist"></tbody></table></div></div>
   </div>
   <div class="subpage" id="sp-train">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card"><div class="card-title">🚂 Train</div><div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="trainMontant" placeholder="200000" min="0"></div><div class="form-group"><label class="form-label">Participants</label><div class="pgrid" id="trainPart"></div></div><div class="form-group"><label class="form-label">Notes</label><input id="trainNotes" placeholder="Infos..."></div><button class="btn btn-blue" style="width:100%" onclick="submitArgent('train')">⚡ ENREGISTRER</button></div>
       <div class="card" id="trainResult" style="display:none"><div class="card-title">📊 Résultat</div><div id="trainRC"></div></div>
     </div>
   </div>
   <div class="subpage" id="sp-fleeca">
-    <div class="g2">
+    <div class="braq-layout">
       <div class="card"><div class="card-title">🏦 Fleeca</div><div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="fleecaMontant" placeholder="150000" min="0"></div><div class="form-group"><label class="form-label">Participants</label><div class="pgrid" id="fleecaPart"></div></div><div class="form-group"><label class="form-label">Notes</label><input id="fleecaNotes" placeholder="Infos..."></div><button class="btn btn-blue" style="width:100%" onclick="submitArgent('fleeca')">⚡ ENREGISTRER</button></div>
       <div class="card" id="fleecaResult" style="display:none"><div class="card-title">📊 Résultat</div><div id="fleecaRC"></div></div>
     </div>
@@ -963,6 +977,19 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <div class="modal" id="editOpModal"><div class="mbox" style="text-align:left"><h2 style="font-family:'Space Grotesk';margin-bottom:16px">✏ Modifier l'opération</h2><input type="hidden" id="editOpId"><div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="editOpMontant" min="0"></div><div class="form-group"><label class="form-label">Notes / Contenu</label><input type="text" id="editOpNotes"></div><div style="display:flex;gap:8px"><button class="btn btn-blue" onclick="saveEditOp()">💾 Sauvegarder</button><button class="btn btn-ghost" onclick="hideEditOp()">Annuler</button></div></div></div>
 
 <script>
+// Ajuste la largeur des formulaires de braquage selon que le résultat est affiché
+function adjustBraqLayouts(){
+  document.querySelectorAll('.braq-layout').forEach(function(g){
+    const cards=g.querySelectorAll(':scope > .card');
+    if(cards.length<2){g.style.gridTemplateColumns='1fr';return;}
+    const second=cards[1];
+    const hidden=second.style.display==='none'||getComputedStyle(second).display==='none';
+    g.style.gridTemplateColumns=hidden?'1fr':'1fr 1fr';
+    g.style.maxWidth=hidden?'900px':'none';
+  });
+}
+
+
 
 
 // Badge de grade : supporte couleurs hex personnalisées + presets
@@ -1663,7 +1690,7 @@ async function submitItemBraq(type){
   if(type==='bijouterie'){S.weekly.bijouterie=(S.weekly.bijouterie||0)+1;saveWeekly();}
   if(type==='humanlab'){S.weekly.humanlab=(S.weekly.humanlab||0)+1;saveWeekly();}
   for(const it of items)addToStock(it.nom,it.qte,it.prixUnit,typeLabel,true);
-  document.getElementById(c.resultId).style.display='block';
+  document.getElementById(c.resultId).style.display='block';adjustBraqLayouts();
   const _shareRows=pids.length>0?shares.map(function(sh){const m2=getMembre(sh.membreId);const g2=m2?getGrade(m2.gradeId):null;return'<div class="distrib-row"><div>'+(m2?m2.name:'?')+' '+(g2?'<span class="badge '+gc(g2.color)+'">'+g2.name+'</span>':'')+'</div><div class="distrib-amt">'+fmt(sh.amount)+'</div></div>';}).join(''):'<p style="color:var(--muted2);font-size:12px">Aucun participant sélectionné</p>';
   const _itemRows=items.map(function(i){return'<div style="font-size:11px;color:var(--muted2);padding:2px 0">'+i.qte+'× '+i.nom+' → stock</div>';}).join('');
   document.getElementById(c.rcId).innerHTML='<div class="distrib-mc" style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2)"><div class="distrib-mc-lbl" style="color:var(--teal)">📦 STOCK + SALAIRES EN ATTENTE</div><div class="distrib-mc-amt" style="color:var(--teal)">'+fmt(valEst)+'</div></div><p style="color:var(--muted2);font-size:12px;margin-bottom:8px">Salaires calculés — part MC encaissée à la vente groupée</p>'+_shareRows+_itemRows;
@@ -2012,8 +2039,21 @@ function goTab(name){
   if(name==='commandes')markCmdSeen();
   document.querySelector(`.ntab[data-tab="${name}"]`)?.classList.add('active');
   const sub=document.getElementById('sub-braquages');
-  if(name==='braquages'){sub.classList.add('show');goSub(currentSub);}else sub.classList.remove('show');
+  if(name==='braquages'){sub.classList.add('show');goSub(currentSub);adjustBraqLayouts();}else sub.classList.remove('show');
 }
+
+// Ajuste la largeur des formulaires de braquage selon que le résultat est affiché
+function adjustBraqLayouts(){
+  document.querySelectorAll('.braq-layout').forEach(function(g){
+    const cards=g.querySelectorAll(':scope > .card');
+    if(cards.length<2){g.style.gridTemplateColumns='1fr';return;}
+    const second=cards[1];
+    const hidden=second.style.display==='none'||getComputedStyle(second).display==='none';
+    g.style.gridTemplateColumns=hidden?'1fr':'1fr 1fr';
+    g.style.maxWidth=hidden?'900px':'none';
+  });
+}
+
 function goSub(sub){
   currentSub=sub;
   document.querySelectorAll('#page-braquages .subpage').forEach(p=>p.classList.remove('active'));
@@ -2023,6 +2063,7 @@ function goSub(sub){
   if(sub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(sub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
   if(sub==='humanlab')buildItemSelector('hlItemsList','humanlab','hlTotal','hlDetail');
+  adjustBraqLayouts();
 }
 
 // ═══ REFRESH SELECTS ═══
