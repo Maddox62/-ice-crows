@@ -533,7 +533,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0531-1410</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0531-1414</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -2338,78 +2338,100 @@ function renderIdentityForm(){
 
 
 // ── SAISIE EXPRESS (bouton flottant) ──
+var QK_ITEM_TYPES=['cambriolage','bijouterie','humanlab','conteneur'];
 function openQuickEntry(){
   var m=document.getElementById('quickModal');if(m)m.remove();
+  // reset les quantités express
+  Object.keys(itemsQte).forEach(function(k){if(k.indexOf('qkItemsList:')===0)delete itemsQte[k];});
   m=document.createElement('div');m.id='quickModal';m.className='modal show';
   var partChecks=S.membres.map(function(mb){return '<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--card2);border-radius:5px;font-size:12px;cursor:pointer"><input type="checkbox" value="'+mb._id+'" style="width:13px;height:13px;accent-color:var(--acc)"> '+mb.name+'</label>';}).join('');
-  m.innerHTML='<div class="mbox" style="max-width:480px">'
+  m.innerHTML='<div class="mbox" style="max-width:500px;max-height:90vh;overflow-y:auto">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><h2 style="text-align:left;font-size:20px">⚡ Saisie express</h2><button onclick="document.getElementById(\'quickModal\').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">✕</button></div>'
     +'<p class="sub" style="text-align:left;margin-bottom:18px">Déclare une opération en quelques secondes</p>'
     +'<div class="form-group"><label class="form-label">Type d\u2019opération</label><select id="qkType" onchange="qkTypeChange()">'
       +'<optgroup label="💰 Cash (distribution immédiate)">'
       +'<option value="superette">🏪 Superette</option><option value="ammu">🔧 Ammunation</option><option value="atm">🏧 ATM</option><option value="train">🚂 Train</option><option value="fleeca">🏦 Fleeca</option><option value="autre">⚡ Autre (cash)</option>'
       +'</optgroup>'
-      +'<optgroup label="📦 Braquages à items (salaires en attente)">'
+      +'<optgroup label="📦 Braquages à items (alimente le stock)">'
       +'<option value="cambriolage">🏠 Cambriolage</option><option value="bijouterie">💎 Bijouterie</option><option value="humanlab">🧪 HumanLab</option><option value="conteneur">📦 Conteneur</option>'
       +'</optgroup>'
       +'</select></div>'
-    +'<div class="form-group"><label class="form-label" id="qkMontantLbl">Montant ($)</label><input type="number" id="qkMontant" placeholder="50000" autofocus></div>'
-    +'<div id="qkBraqNote" style="display:none;font-size:11px;color:var(--gold);background:rgba(245,183,64,.1);border:1px solid rgba(245,183,64,.25);border-radius:6px;padding:9px 11px;margin-bottom:12px">📦 Braquage à items : la valeur est estimée, les salaires sont calculés mais la part MC sera encaissée à la vente groupée du stock.</div>'
+    // Zone CASH
+    +'<div id="qkCashZone"><div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="qkMontant" placeholder="50000"></div></div>'
+    // Zone ITEMS
+    +'<div id="qkItemsZone" style="display:none">'
+      +'<div style="font-size:11px;color:var(--gold);background:rgba(245,183,64,.1);border:1px solid rgba(245,183,64,.25);border-radius:6px;padding:9px 11px;margin-bottom:12px">📦 Sélectionne les items récupérés. Ils alimentent le stock ; la part MC sera encaissée à la vente groupée.</div>'
+      +'<label class="form-label">Items récupérés</label>'
+      +'<div id="qkItemsList" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;max-height:240px;overflow-y:auto;margin-bottom:10px"></div>'
+      +'<div class="totbox" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between"><span>Total estimé :</span><strong id="qkItemsTotal" style="color:var(--gold)">$0</strong></div><div id="qkItemsDetail" style="font-size:11px;color:var(--muted);margin-top:4px">Sélectionnez des items</div></div>'
+    +'</div>'
     +'<div class="form-group"><label class="form-label">Participants</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:180px;overflow-y:auto;background:var(--bg3);padding:8px;border-radius:6px;border:1px solid var(--border)" id="qkPart">'+partChecks+'</div></div>'
     +'<div id="qkPreview" style="font-size:12px;color:var(--muted2);margin-bottom:12px"></div>'
     +'<button class="btn btn-blue" style="width:100%" onclick="submitQuickEntry()">⚡ Enregistrer & distribuer</button>'
     +'</div>';
   document.body.appendChild(m);
   m.onclick=function(e){if(e.target===m)m.remove();};
-  var mt=document.getElementById('qkMontant');
-  mt.oninput=qkUpdatePreview;
   m.querySelectorAll('#qkPart input').forEach(function(c){c.onchange=qkUpdatePreview;});
-  setTimeout(function(){mt.focus();},100);
+  var mt=document.getElementById('qkMontant');if(mt){mt.oninput=qkUpdatePreview;setTimeout(function(){mt.focus();},100);}
 }
-var QK_ITEM_TYPES=['cambriolage','bijouterie','humanlab','conteneur'];
 function qkTypeChange(){
   var type=document.getElementById('qkType').value;
   var isItem=QK_ITEM_TYPES.indexOf(type)!==-1;
-  document.getElementById('qkBraqNote').style.display=isItem?'block':'none';
-  document.getElementById('qkMontantLbl').textContent=isItem?'Valeur estimée du butin ($)':'Montant ($)';
+  document.getElementById('qkCashZone').style.display=isItem?'none':'block';
+  document.getElementById('qkItemsZone').style.display=isItem?'block':'none';
+  if(isItem){
+    // construire le sélecteur d'items pour ce type
+    Object.keys(itemsQte).forEach(function(k){if(k.indexOf('qkItemsList:')===0)delete itemsQte[k];});
+    buildItemSelector('qkItemsList',type,'qkItemsTotal','qkItemsDetail');
+  }
   qkUpdatePreview();
 }
 function qkUpdatePreview(){
   var type=document.getElementById('qkType').value;
-  var montant=+document.getElementById('qkMontant').value||0;
+  var isItem=QK_ITEM_TYPES.indexOf(type)!==-1;
   var pids=[].slice.call(document.querySelectorAll('#qkPart input:checked')).map(function(c){return c.value;});
   var pv=document.getElementById('qkPreview');if(!pv)return;
-  var isItem=QK_ITEM_TYPES.indexOf(type)!==-1;
+  var montant=isItem?getItemsForSelector('qkItemsList').reduce(function(s,i){return s+i.total;},0):(+document.getElementById('qkMontant').value||0);
   if(montant>0&&pids.length){
     var res=distribute(montant,pids);
-    if(isItem)pv.innerHTML=pids.length+' membre(s) se partagent <strong style="color:var(--teal)">'+fmt(montant)+'</strong> en salaires · Part MC <strong style="color:var(--acc)">'+fmt(res.mc)+'</strong> encaissée à la vente';
+    if(isItem)pv.innerHTML=pids.length+' membre(s) se partagent <strong style="color:var(--teal)">'+fmt(montant)+'</strong> en salaires · MC <strong style="color:var(--acc)">'+fmt(res.mc)+'</strong> à la vente';
     else pv.innerHTML='MC : <strong style="color:var(--acc)">'+fmt(res.mc)+'</strong> · '+pids.length+' membre(s) se partagent <strong style="color:var(--teal)">'+fmt(res.toShare)+'</strong>';
   }else pv.innerHTML='';
 }
 async function submitQuickEntry(){
   var type=document.getElementById('qkType').value;
-  var montant=+document.getElementById('qkMontant').value||0;
   var pids=[].slice.call(document.querySelectorAll('#qkPart input:checked')).map(function(c){return c.value;});
-  if(montant<=0)return notify('Montant invalide','err');
   if(!pids.length)return notify('Sélectionnez au moins un participant','err');
   var isItem=QK_ITEM_TYPES.indexOf(type)!==-1;
   var labels={superette:'Superette',ammu:'Ammunation',atm:'ATM',train:'Train',fleeca:'Fleeca',autre:'Opération',cambriolage:'Cambriolage',bijouterie:'Bijouterie',humanlab:'HumanLab',conteneur:'Conteneur'};
   var typeLabel=labels[type]||'Opération';
-  var res=distribute(montant,pids);
   if(isItem){
-    // Braquage à items : salaires immédiats, MC en attente (encaissé à la vente groupée)
-    await fbAdd('ops',{type:type,typeLabel:typeLabel,montant:montant,contenu:'(saisie express)',items:[],notes:'Saisie express',mc:0,toShare:montant,shares:distribute(montant,pids).shares,mcPending:true,date:nowStr(),ts:Date.now()});
-    // Incrémenter les compteurs de limite
+    var items=getItemsForSelector('qkItemsList');
+    if(!items.length)return notify('Sélectionnez au moins un item','err');
+    var valEst=items.reduce(function(s,i){return s+i.total;},0);
+    var contenu=items.map(function(i){return i.qte+'× '+i.nom;}).join(', ');
+    var res=distribute(valEst,pids);
+    await fbAdd('ops',{type:type,typeLabel:typeLabel,montant:valEst,contenu:contenu,items:items,notes:'Saisie express',mc:0,toShare:valEst,shares:res.shares,mcPending:true,date:nowStr(),ts:Date.now()});
+    // compteurs de limite
     if(type==='cambriolage'&&currentUser){if(!S.daily.cambByMembre)S.daily.cambByMembre={};S.daily.cambByMembre[currentUser._id]=(S.daily.cambByMembre[currentUser._id]||0)+1;saveDaily();}
     if(type==='conteneur'&&currentUser){if(!S.daily.contByMembre)S.daily.contByMembre={};S.daily.contByMembre[currentUser._id]=(S.daily.contByMembre[currentUser._id]||0)+1;saveDaily();}
     if(type==='bijouterie'){S.weekly.bijouterie=(S.weekly.bijouterie||0)+1;saveWeekly();}
     if(type==='humanlab'){S.weekly.humanlab=(S.weekly.humanlab||0)+1;saveWeekly();}
+    // alimenter le stock
+    for(var i=0;i<items.length;i++){addToStock(items[i].nom,items[i].qte,items[i].prixUnit,typeLabel,true);}
+    Object.keys(itemsQte).forEach(function(k){if(k.indexOf('qkItemsList:')===0)delete itemsQte[k];});
+    if(typeof pushFeed==='function')pushFeed('a déclaré '+typeLabel+' de '+fmt(valEst)+' (express)','🔫');
+    document.getElementById('quickModal').remove();
+    notify('✅ '+typeLabel+' enregistré : '+fmt(valEst)+' → stock','ok');
   }else{
-    await fbAdd('ops',{type:type,typeLabel:typeLabel,montant:montant,mc:res.mc,toShare:res.toShare,shares:res.shares,contenu:'',notes:'Saisie express',date:nowStr(),ts:Date.now()});
+    var montant=+document.getElementById('qkMontant').value||0;
+    if(montant<=0)return notify('Montant invalide','err');
+    var r2=distribute(montant,pids);
+    await fbAdd('ops',{type:type,typeLabel:typeLabel,montant:montant,mc:r2.mc,toShare:r2.toShare,shares:r2.shares,contenu:'',notes:'Saisie express',date:nowStr(),ts:Date.now()});
+    if(typeof pushFeed==='function')pushFeed('a déclaré '+typeLabel+' de '+fmt(montant)+' (express)','⚡');
+    document.getElementById('quickModal').remove();
+    notify('✅ '+typeLabel+' enregistré : '+fmt(montant),'ok');
   }
-  if(typeof pushFeed==='function')pushFeed('a déclaré '+typeLabel+' de '+fmt(montant)+' (express)',isItem?'🔫':'⚡');
-  document.getElementById('quickModal').remove();
-  notify('✅ '+typeLabel+' enregistré : '+fmt(montant),'ok');
 }
 
 // ── PRÉVISIONS INTELLIGENTES (mois en cours) ──
