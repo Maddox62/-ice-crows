@@ -510,6 +510,32 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .plan-role-label{font-size:11px;font-weight:600;color:var(--muted2);}
 @media(max-width:880px){.plan-roles{grid-template-columns:1fr;}}
 
+
+/* ── RADIO ── */
+.radio-item{display:flex;align-items:center;gap:14px;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;}
+.radio-freq{font-family:'JetBrains Mono';font-size:15px;font-weight:700;color:var(--teal);min-width:80px;}
+/* ── CHRONIQUE / TIMELINE ── */
+.timeline{position:relative;padding-left:24px;}
+.timeline::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--border2);}
+.chron-entry{position:relative;margin-bottom:16px;}
+.chron-dot{position:absolute;left:-20px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc-dim);border:2px solid var(--bg);}
+.chron-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.chron-title{font-family:'Oswald';font-size:15px;font-weight:600;margin-bottom:6px;color:var(--acc);}
+.chron-body{font-size:13px;line-height:1.6;}
+.chron-meta{font-size:10px;color:var(--muted);margin-top:10px;}
+/* ── MUR DU SOUVENIR ── */
+.memorial-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.mem-card{position:relative;background:linear-gradient(180deg,var(--bg3),var(--card));border:1px solid var(--border2);border-radius:var(--r-lg);padding:16px;text-align:center;}
+.mem-photo{width:70px;height:70px;border-radius:50%;object-fit:cover;margin:0 auto 10px;display:block;filter:grayscale(.6);border:2px solid var(--border2);}
+.mem-noimg{display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--bg2);}
+.mem-name{font-family:'Oswald';font-size:15px;font-weight:700;color:var(--gold);}
+.mem-realname{font-size:12px;color:var(--muted2);margin-top:2px;}
+.mem-reason{font-size:11px;margin-top:8px;}
+.mem-tribute{font-size:11px;font-style:italic;color:var(--muted2);margin-top:8px;line-height:1.4;}
+.mem-date{font-size:9px;color:var(--muted);margin-top:8px;}
+.mem-del{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;opacity:0;transition:opacity .15s;}
+.mem-card:hover .mem-del{opacity:1;}
+
 </style>
 </head>
 <body>
@@ -553,7 +579,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0531-1422</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0531-1831</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -601,6 +627,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
       <button class="navitem" data-tab="social" onclick="goTab('social')">💬 Social</button>
       <button class="navitem" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
       <button class="navitem" data-tab="galerie" onclick="goTab('galerie')">📸 Galerie</button>
+      <button class="navitem" data-tab="folklore" onclick="goTab('folklore')">🏍️ Folklore</button>
       <button class="navitem" data-tab="reglement" onclick="goTab('reglement')">📜 Règlement</button>
     </div>
   </div>
@@ -1131,6 +1158,42 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   </div>
 </div>
 
+<!-- ═══ FOLKLORE ═══ -->
+<div class="page" id="page-folklore">
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">📻 Fréquences radio du club</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Les canaux de comms du club</p>
+      <div class="form-row3">
+        <div class="form-group"><label class="form-label">Nom du canal</label><input id="radioName" placeholder="Canal principal"></div>
+        <div class="form-group"><label class="form-label">Fréquence</label><input id="radioFreq" placeholder="123.4"></div>
+        <div class="form-group"><label class="form-label">Note</label><input id="radioNote" placeholder="Urgences uniquement"></div>
+      </div>
+      <button class="btn btn-blue btn-sm" onclick="addRadioChannel()">+ Ajouter une fréquence</button>
+      <div style="margin-top:14px" id="radioList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🕯️ Mur du souvenir</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Hommage aux membres partis, tombés ou retraités</p>
+      <div class="form-row"><div class="form-group"><label class="form-label">Nom</label><input id="memName"></div>
+      <div class="form-group"><label class="form-label">Road name</label><input id="memRoad"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Raison</label><select id="memReason"><option value="parti">🚪 A quitté</option><option value="tombe">🪦 Tombé</option><option value="exclu">⚖️ Exclu</option><option value="retraite">🌅 Retraité</option><option value="autre">🕯️ Autre</option></select></div>
+      <div class="form-group"><label class="form-label">Photo (URL)</label><input id="memPhoto" placeholder="https://..."></div></div>
+      <div class="form-group"><label class="form-label">Hommage</label><input id="memTribute" placeholder="Ride in peace, frère"></div>
+      <button class="btn btn-blue btn-sm" onclick="addMemorial()">+ Ajouter au mur</button>
+      <div style="margin-top:14px" id="memorialList"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📖 Chronique du club</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Le journal narratif : raconte les moments marquants, les guerres, les légendes du club</p>
+    <div class="form-group"><label class="form-label">Titre (optionnel)</label><input id="chronTitle" placeholder="La nuit du grand braquage"></div>
+    <div class="form-group"><label class="form-label">Récit</label><textarea id="chronBody" rows="3" placeholder="Cette nuit-là, sous la pluie..."></textarea></div>
+    <button class="btn btn-blue btn-sm" onclick="addChronicle()">📖 Ajouter à la chronique</button>
+    <div style="margin-top:16px" id="chronicleList"></div>
+  </div>
+</div>
+
 <!-- ═══ GALERIE ═══ -->
 <div class="page" id="page-galerie">
   <div class="card" style="margin-bottom:16px">
@@ -1512,7 +1575,7 @@ document.addEventListener('firebase-ready',async()=>{
 });
 
 async function loadAll(){
-  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls',checklists:'checklists',albums:'albums',plans:'plans'};S.objective=null;
+  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls',checklists:'checklists',albums:'albums',plans:'plans',radio:'radio',chronicle:'chronicle',memorial:'memorial'};S.objective=null;
   for(const[col,key]of Object.entries(cols)){try{const snap=await FB.getDocs(FB.collection(db,col));S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));}catch(e){}}
   S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));
   try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);}}catch(e){}
@@ -1535,6 +1598,9 @@ function setupListeners(){
   FB.onSnapshot(FB.doc(db,'config','daily'),snap=>{if(snap.exists()){Object.assign(S.daily,snap.data());renderLimits();}});
   FB.onSnapshot(FB.doc(db,'config','weekly'),snap=>{if(snap.exists()){Object.assign(S.weekly,snap.data());renderLimits();}});
   setupActivityListener();
+  FB.onSnapshot(FB.collection(db,'radio'),snap=>{S.radio=[];snap.forEach(d=>S.radio.push({...d.data(),_id:d.id}));renderRadio();});
+  FB.onSnapshot(FB.collection(db,'chronicle'),snap=>{S.chronicle=[];snap.forEach(d=>S.chronicle.push({...d.data(),_id:d.id}));renderChronicle();});
+  FB.onSnapshot(FB.collection(db,'memorial'),snap=>{S.memorial=[];snap.forEach(d=>S.memorial.push({...d.data(),_id:d.id}));renderMemorial();});
   FB.onSnapshot(FB.collection(db,'plans'),snap=>{S.plans=[];snap.forEach(d=>S.plans.push({...d.data(),_id:d.id}));renderPlans();});
   FB.onSnapshot(FB.collection(db,'albums'),snap=>{S.albums=[];snap.forEach(d=>S.albums.push({...d.data(),_id:d.id}));renderAlbums();});
   FB.onSnapshot(FB.collection(db,'checklists'),snap=>{S.checklists=[];snap.forEach(d=>S.checklists.push({...d.data(),_id:d.id}));renderChecklists();});
@@ -1597,6 +1663,107 @@ function setUser(m){setTimeout(applyUserBadge,50);
 
 
 
+
+
+// ════════════════════════════════════════════
+//  IMMERSION : RADIO · JOURNAL · ROAD NAMES · MUR DU SOUVENIR
+// ════════════════════════════════════════════
+
+// ── ROAD NAMES (surnoms de route) ──
+// Stocké dans le champ membre "roadName". Helper d'affichage.
+function roadNameOf(memberId){
+  var m=getMembre(memberId);
+  if(!m)return '';
+  return m.roadName||'';
+}
+function displayName(memberId){
+  var m=getMembre(memberId);if(!m)return '?';
+  return m.roadName?('"'+m.roadName+'" '+m.name):m.name;
+}
+
+// ── RADIO / FRÉQUENCES DU CLUB ──
+async function addRadioChannel(){
+  if(!requireAction('manage_members'))return;
+  var name=document.getElementById('radioName').value.trim();
+  var freq=document.getElementById('radioFreq').value.trim();
+  var note=document.getElementById('radioNote').value.trim();
+  if(!name||!freq)return notify('Nom et fréquence requis','err');
+  await fbAdd('radio',{name:name,freq:freq,note:note,date:nowStr(),ts:Date.now()});
+  document.getElementById('radioName').value='';document.getElementById('radioFreq').value='';document.getElementById('radioNote').value='';
+  notify('📻 Fréquence ajoutée','ok');
+}
+async function delRadio(id){if(!requireAction('manage_members'))return;if(!confirm('Supprimer cette fréquence ?'))return;await fbDel('radio',id);}
+function renderRadio(){
+  var el=document.getElementById('radioList');if(!el)return;
+  var list=[].concat(S.radio||[]).sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  var codes=el.getAttribute('data-codes-done');
+  if(!list.length){el.innerHTML='<div class="es">Aucune fréquence enregistrée</div>';return;}
+  el.innerHTML=list.map(function(r){
+    return '<div class="radio-item"><div class="radio-freq">📻 '+r.freq+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600">'+r.name+'</div>'+(r.note?'<div style="font-size:11px;color:var(--muted)">'+r.note+'</div>':'')+'</div>'+(canDo('manage_members')?'<button class="btn btn-red btn-xs" onclick="delRadio(\''+r._id+'\')">✕</button>':'')+'</div>';
+  }).join('');
+}
+
+// ── JOURNAL DE BORD NARRATIF ──
+async function addChronicle(){
+  if(!currentUser)return notify('Connectez-vous','err');
+  var title=document.getElementById('chronTitle').value.trim();
+  var body=document.getElementById('chronBody').value.trim();
+  if(!body)return notify('Écris quelque chose','err');
+  await fbAdd('chronicle',{title:title,body:body,auteur:currentUser.name,roadName:currentUser.roadName||'',date:nowStr(),ts:Date.now()});
+  document.getElementById('chronTitle').value='';document.getElementById('chronBody').value='';
+  notify('📖 Entrée ajoutée à la chronique','ok');
+  pushFeed('a écrit dans la chronique du club','📖');
+}
+async function delChronicle(id){
+  var c=S.chronicle.find(function(x){return x._id===id;});
+  if(!isAdmin()&&(!c||c.auteur!==(currentUser||{}).name))return notify('Seul l\u2019auteur ou un admin peut supprimer','err');
+  if(!confirm('Supprimer cette entrée ?'))return;await fbDel('chronicle',id);
+}
+function renderChronicle(){
+  var el=document.getElementById('chronicleList');if(!el)return;
+  var list=[].concat(S.chronicle||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  if(!list.length){el.innerHTML='<div class="es">La chronique est vide. Raconte le premier chapitre du club.</div>';return;}
+  el.innerHTML='<div class="timeline">'+list.map(function(c){
+    return '<div class="chron-entry"><div class="chron-dot"></div><div class="chron-card">'
+      +(c.title?'<div class="chron-title">'+c.title+'</div>':'')
+      +'<div class="chron-body">'+c.body.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>'
+      +'<div class="chron-meta">✍️ '+(c.roadName?'"'+c.roadName+'" ':'')+c.auteur+' · '+c.date
+      +(isAdmin()||c.auteur===(currentUser||{}).name?' · <span style="color:var(--red);cursor:pointer" onclick="delChronicle(\''+c._id+'\')">supprimer</span>':'')
+      +'</div></div></div>';
+  }).join('')+'</div>';
+}
+
+// ── MUR DU SOUVENIR ──
+async function addMemorial(){
+  if(!requireAction('manage_members'))return;
+  var name=document.getElementById('memName').value.trim();
+  var road=document.getElementById('memRoad').value.trim();
+  var reason=document.getElementById('memReason').value;
+  var tribute=document.getElementById('memTribute').value.trim();
+  var photo=document.getElementById('memPhoto').value.trim();
+  if(!name)return notify('Nom requis','err');
+  await fbAdd('memorial',{name:name,roadName:road,reason:reason,tribute:tribute,photo:photo,date:nowStr(),ts:Date.now()});
+  ['memName','memRoad','memTribute','memPhoto'].forEach(function(i){document.getElementById(i).value='';});
+  notify('🕯️ Hommage ajouté au mur','ok');
+}
+async function delMemorial(id){if(!requireAction('manage_members'))return;if(!confirm('Retirer cet hommage ?'))return;await fbDel('memorial',id);}
+function renderMemorial(){
+  var el=document.getElementById('memorialList');if(!el)return;
+  var list=[].concat(S.memorial||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  if(!list.length){el.innerHTML='<div class="es">Aucun hommage pour l\u2019instant.</div>';return;}
+  var reasonLabels={parti:'🚪 A quitté le club',tombe:'🪦 Tombé',exclu:'⚖️ Exclu',retraite:'🌅 Retraité',autre:'🕯️ Hommage'};
+  el.innerHTML='<div class="memorial-grid">'+list.map(function(m){
+    var av=m.photo?'<img src="'+m.photo+'" class="mem-photo">':'<div class="mem-photo mem-noimg">💀</div>';
+    return '<div class="mem-card">'+av
+      +'<div class="mem-name">'+(m.roadName?'"'+m.roadName+'"':'')+'</div>'
+      +'<div class="mem-realname">'+m.name+'</div>'
+      +'<div class="mem-reason">'+(reasonLabels[m.reason]||'🕯️')+'</div>'
+      +(m.tribute?'<div class="mem-tribute">"'+m.tribute+'"</div>':'')
+      +'<div class="mem-date">'+m.date+'</div>'
+      +(canDo('manage_members')?'<button class="mem-del" onclick="delMemorial(\''+m._id+'\')">✕</button>':'')
+      +'</div>';
+  }).join('')+'</div>';
+}
 
 // ════════════════════════════════════════════
 //  NOTIFICATIONS NAVIGATEUR + PLANIFICATEUR DE BRAQUAGE
@@ -1881,7 +2048,7 @@ function renderTrombi(){
     var online=(S._online||[]).indexOf(m._id)!==-1;
     return '<div class="trombi-card" onclick="openMemberProfile(\''+m._id+'\')">'
       +'<div style="position:relative;display:inline-block">'+av+(online?'<span class="trombi-online"></span>':'')+'</div>'
-      +'<div class="trombi-name">'+m.name+'</div>'
+      +'<div class="trombi-name">'+m.name+'</div>'+(m.roadName?'<div style="font-size:10px;color:var(--acc);font-style:italic">"'+m.roadName+'"</div>':'')
       +(g?gradeBadge(g,'font-size:8px'):'')
       +(m.bio?'<div class="trombi-bio">"'+m.bio+'"</div>':'')
       +'<div class="trombi-rep">'+lvl.ico+' '+rep+' pts</div>'
@@ -2033,7 +2200,8 @@ async function saveMyProfile(){
     gameName:document.getElementById('pfGameName').value.trim(),
     discord:document.getElementById('pfDiscord').value.trim(),
     color:document.getElementById('pfColor').value,
-    birthday:document.getElementById('pfBirthday').value.trim()
+    birthday:document.getElementById('pfBirthday').value.trim(),
+    roadName:document.getElementById('pfRoadName').value.trim()
   };
   var pin=document.getElementById('pfPin').value.trim();
   if(pin){if(!/^[0-9]{4}$/.test(pin))return notify('Le PIN doit faire 4 chiffres','err');upd.pin=pin;}
@@ -3653,6 +3821,7 @@ function goTab(name){
   if(name==='membres'){renderOrgChart();renderTrombi();}
   if(name==='galerie')renderAlbums();
   if(name==='missions')renderPlans();
+  if(name==='folklore'){renderRadio();renderChronicle();renderMemorial();}
   if(name==='commandes'){markCmdSeen();renderCmdQueue();}
   document.querySelectorAll('.navcat.open').forEach(c=>c.classList.remove('open'));var _ai=document.querySelector(`.navitem[data-tab="${name}"]`);if(_ai){_ai.classList.add('active');var _cat=_ai.closest('.navcat');if(_cat)_cat.classList.add('active');}var _at=document.querySelector(`.ntab[data-tab="${name}"]`);if(_at)_at.classList.add('active');
   const sub=document.getElementById('sub-braquages');
@@ -3714,7 +3883,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();renderActionPerms();renderAlbums();renderTrombi();renderBirthdays();renderCmdQueue();renderSessionWidget();renderPlans();checkNotifTriggers();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();renderActionPerms();renderAlbums();renderTrombi();renderBirthdays();renderCmdQueue();renderSessionWidget();renderPlans();renderRadio();renderChronicle();renderMemorial();checkNotifTriggers();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
