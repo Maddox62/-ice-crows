@@ -430,6 +430,22 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 #quickFab:active{transform:scale(.95);}
 @media(max-width:880px){#quickFab{bottom:18px;right:18px;width:52px;height:52px;font-size:28px;}}
 
+
+/* ── NAV CATÉGORIES DÉROULANTES ── */
+.navcat{position:relative;display:inline-flex;}
+.navcat-btn{cursor:pointer;}
+.navcat-menu{position:absolute;top:100%;left:0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);box-shadow:var(--sh);min-width:190px;padding:6px;display:none;flex-direction:column;gap:2px;z-index:495;animation:navMenuIn .18s ease;}
+@keyframes navMenuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.navcat:hover .navcat-menu,.navcat.open .navcat-menu{display:flex;}
+.navitem{background:none;border:none;color:var(--muted2);font-family:'Archivo';font-size:13px;font-weight:500;text-align:left;padding:9px 12px;border-radius:var(--r-sm);cursor:pointer;white-space:nowrap;transition:all .14s;}
+.navitem:hover{background:var(--bg3);color:var(--text);}
+.navitem.active{background:var(--acc-dim);color:var(--acc);}
+.navitem.hidden{display:none!important;}
+.navcat.active .navcat-btn{color:var(--acc);}
+.navcat.active .navcat-btn::after{content:'';position:absolute;bottom:0;left:12px;right:12px;height:2px;background:var(--acc);box-shadow:0 0 12px var(--acc);}
+.navcat.hidden{display:none!important;}
+.navcat-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;margin-left:5px;background:var(--acc);color:#000;font-size:9px;font-weight:700;font-family:'JetBrains Mono';border-radius:8px;}
+
 </style>
 </head>
 <body>
@@ -481,25 +497,55 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 
 <nav id="mainNav">
   <button class="ntab active" data-tab="dashboard" onclick="goTab('dashboard')">🏠 Dashboard</button>
-  <button class="ntab" data-tab="membres" onclick="goTab('membres')">👥 Membres</button>
-  <button class="ntab" data-tab="braquages" onclick="goTab('braquages')">🔫 Braquages</button>
-  <button class="ntab" data-tab="drogues" onclick="goTab('drogues')">💊 Drogues</button>
-  <button class="ntab" data-tab="stock" onclick="goTab('stock')">📦 Stock</button>
-  <button class="ntab" data-tab="armurerie" onclick="goTab('armurerie')">🔫 Armurerie</button>
-  <button class="ntab" data-tab="commandes" onclick="goTab('commandes')">🛒 Commandes</button>
-  <button class="ntab" data-tab="banque" onclick="goTab('banque')">🏦 Banque</button>
-  <button class="ntab" data-tab="salaires" onclick="goTab('salaires')">💰 Salaires</button>
-  <button class="ntab" data-tab="stats" onclick="goTab('stats')">📊 Stats</button>
-  <button class="ntab" data-tab="classement" onclick="goTab('classement')">🏆 Classement</button>
-  <button class="ntab" data-tab="club" onclick="goTab('club')">🏆 Club</button>
-  <button class="ntab" data-tab="social" onclick="goTab('social')">💬 Social</button>
-  <button class="ntab" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
-  <button class="ntab" data-tab="garage" onclick="goTab('garage')">🚗 Garage</button>
-  <button class="ntab" data-tab="sanctions" onclick="goTab('sanctions')">⚖️ Sanctions</button>
-  <button class="ntab" data-tab="missions" onclick="goTab('missions')">🎯 Missions</button>
-  <button class="ntab" data-tab="reglement" onclick="goTab('reglement')">📜 Règlement</button>
-  <button class="ntab" data-tab="config" onclick="goTab('config')">⚙️ Config</button>
-  <button class="ntab" data-tab="itemsbdd" onclick="goTab('itemsbdd')">🗂 Items BDD</button>
+
+  <div class="navcat" data-cat="ops">
+    <button class="ntab navcat-btn">🔫 Opérations ▾</button>
+    <div class="navcat-menu">
+      <button class="navitem" data-tab="braquages" onclick="goTab('braquages')">🔫 Braquages</button>
+      <button class="navitem" data-tab="drogues" onclick="goTab('drogues')">💊 Drogues</button>
+      <button class="navitem" data-tab="stock" onclick="goTab('stock')">📦 Stock</button>
+      <button class="navitem" data-tab="commandes" onclick="goTab('commandes')">🛒 Commandes</button>
+      <button class="navitem" data-tab="missions" onclick="goTab('missions')">🎯 Missions</button>
+    </div>
+  </div>
+
+  <div class="navcat" data-cat="gestion">
+    <button class="ntab navcat-btn">🏦 Gestion ▾</button>
+    <div class="navcat-menu">
+      <button class="navitem" data-tab="membres" onclick="goTab('membres')">👥 Membres</button>
+      <button class="navitem" data-tab="banque" onclick="goTab('banque')">🏦 Banque</button>
+      <button class="navitem" data-tab="salaires" onclick="goTab('salaires')">💰 Salaires</button>
+      <button class="navitem" data-tab="armurerie" onclick="goTab('armurerie')">🔫 Armurerie</button>
+      <button class="navitem" data-tab="garage" onclick="goTab('garage')">🚗 Garage</button>
+      <button class="navitem" data-tab="sanctions" onclick="goTab('sanctions')">⚖️ Sanctions</button>
+    </div>
+  </div>
+
+  <div class="navcat" data-cat="data">
+    <button class="ntab navcat-btn">📊 Données ▾</button>
+    <div class="navcat-menu">
+      <button class="navitem" data-tab="stats" onclick="goTab('stats')">📊 Stats</button>
+      <button class="navitem" data-tab="classement" onclick="goTab('classement')">🏆 Classement</button>
+      <button class="navitem" data-tab="club" onclick="goTab('club')">🏅 Club</button>
+    </div>
+  </div>
+
+  <div class="navcat" data-cat="comm">
+    <button class="ntab navcat-btn">💬 Communauté ▾</button>
+    <div class="navcat-menu">
+      <button class="navitem" data-tab="social" onclick="goTab('social')">💬 Social</button>
+      <button class="navitem" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
+      <button class="navitem" data-tab="reglement" onclick="goTab('reglement')">📜 Règlement</button>
+    </div>
+  </div>
+
+  <div class="navcat" data-cat="admin" id="navcatAdmin">
+    <button class="ntab navcat-btn" style="color:var(--gold)">🔒 Admin ▾</button>
+    <div class="navcat-menu">
+      <button class="navitem" data-tab="config" onclick="goTab('config')">⚙️ Config</button>
+      <button class="navitem" data-tab="itemsbdd" onclick="goTab('itemsbdd')">🗂 Items BDD</button>
+    </div>
+  </div>
 </nav>
 <div class="submenu" id="sub-braquages">
   <button class="stab active" onclick="goSub('cambriolage')">🏠 Cambriolage</button>
@@ -1363,7 +1409,7 @@ document.addEventListener('firebase-ready',async()=>{
   db=window.__db;FB=window.__fb;
   document.getElementById('loader').style.display='none';
   try{const rs=localStorage.getItem('icecrows_run');if(rs)runSession=JSON.parse(rs);}catch(e){}
-  await loadAll();applyIdentity();setupListeners();showLogin();startClock();try{applyTheme(localStorage.getItem('icecrows_theme')||'dark');}catch(e){}setInterval(checkEventReminders,60000);
+  await loadAll();applyIdentity();setupListeners();initNavCategories();showLogin();startClock();try{applyTheme(localStorage.getItem('icecrows_theme')||'dark');}catch(e){}setInterval(checkEventReminders,60000);
 });
 
 async function loadAll(){
@@ -1547,12 +1593,39 @@ function canAccessTab(tab){
   if(!g)return false;
   return tabPerms.includes(g._id);
 }
+
+// Toggle des catégories de nav au clic (en plus du survol)
+function initNavCategories(){
+  document.querySelectorAll('.navcat-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var cat=btn.closest('.navcat');
+      var wasOpen=cat.classList.contains('open');
+      document.querySelectorAll('.navcat.open').forEach(function(c){c.classList.remove('open');});
+      if(!wasOpen)cat.classList.add('open');
+    });
+  });
+  document.addEventListener('click',function(){
+    document.querySelectorAll('.navcat.open').forEach(function(c){c.classList.remove('open');});
+  });
+}
+
 function applyNavPerms(){
-  document.querySelectorAll('.ntab[data-tab]').forEach(btn=>{
-    const tab=btn.dataset.tab;
-    // config et itemsbdd : admin uniquement, toujours
+  // Onglets individuels selon permissions
+  document.querySelectorAll('.navitem[data-tab]').forEach(function(btn){
+    var tab=btn.dataset.tab;
     if(tab==='config'||tab==='itemsbdd'){btn.classList.toggle('hidden',!isAdmin());return;}
     btn.classList.toggle('hidden',!canAccessTab(tab));
+  });
+  // Catégorie Admin : visible seulement pour admin
+  var adminCat=document.getElementById('navcatAdmin');
+  if(adminCat)adminCat.classList.toggle('hidden',!isAdmin());
+  // Masquer une catégorie si tous ses items sont cachés
+  document.querySelectorAll('.navcat').forEach(function(cat){
+    if(cat.id==='navcatAdmin')return;
+    var items=cat.querySelectorAll('.navitem');
+    var anyVisible=[].slice.call(items).some(function(i){return !i.classList.contains('hidden');});
+    cat.classList.toggle('hidden',!anyVisible);
   });
 }
 
@@ -2473,13 +2546,23 @@ function updateAlerts(){
 }
 function markCmdSeen(){try{localStorage.setItem('icecrows_cmdSeen',Date.now());}catch(e){}setNavBadge('commandes',S.commandes.filter(c=>!isArchived(c)&&c.statut==='attente').length);}
 function setNavBadge(tab,count){
-  const btn=document.querySelector('.ntab[data-tab="'+tab+'"]');
+  var btn=document.querySelector('.navitem[data-tab="'+tab+'"]');
   if(!btn)return;
-  let b=btn.querySelector('.nav-badge');
+  var b=btn.querySelector('.nav-badge');
   if(count>0){
     if(!b){b=document.createElement('span');b.className='nav-badge';btn.appendChild(b);}
     b.textContent=count;
   }else if(b){b.remove();}
+  // Badge sur la catégorie parente (somme des badges visibles)
+  var cat=btn.closest('.navcat');
+  if(cat){
+    var catBtn=cat.querySelector('.navcat-btn');
+    var total=0;
+    cat.querySelectorAll('.navitem .nav-badge').forEach(function(x){total+=parseInt(x.textContent)||0;});
+    var cb=catBtn.querySelector('.navcat-badge');
+    if(total>0){if(!cb){cb=document.createElement('span');cb.className='navcat-badge';catBtn.appendChild(cb);}cb.textContent=total;}
+    else if(cb){cb.remove();}
+  }
 }
 
 // ── 4. MINI GRAPHIQUE DASHBOARD (7 jours) ──
@@ -2947,14 +3030,14 @@ function goTab(name){
   if(name!=='dashboard'&&name!=='config'&&!canAccessTab(name))return notify('Accès refusé pour votre grade','err');
   currentTab=name;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.ntab,.navitem,.navcat').forEach(b=>b.classList.remove('active'));
   const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');
   if(name==='classement')renderClassement();
   if(name==='club'){renderAchievements();renderHeatmap();renderWeekCard();}
   if(name==='social'){renderFeed();renderPolls();if(document.getElementById('pollOptions')&&!document.querySelectorAll('.poll-opt-input').length){addPollOption();addPollOption();}}
   if(name==='membres')renderOrgChart();
   if(name==='commandes')markCmdSeen();
-  document.querySelector(`.ntab[data-tab="${name}"]`)?.classList.add('active');
+  document.querySelectorAll('.navcat.open').forEach(c=>c.classList.remove('open'));var _ai=document.querySelector(`.navitem[data-tab="${name}"]`);if(_ai){_ai.classList.add('active');var _cat=_ai.closest('.navcat');if(_cat)_cat.classList.add('active');}var _at=document.querySelector(`.ntab[data-tab="${name}"]`);if(_at)_at.classList.add('active');
   const sub=document.getElementById('sub-braquages');
   if(name==='braquages'){sub.classList.add('show');goSub(currentSub);adjustBraqLayouts();}else sub.classList.remove('show');
 }
