@@ -423,12 +423,21 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .poll-opt-content{position:relative;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
 .poll-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
 
+
+/* ── BOUTON FLOTTANT SAISIE EXPRESS ── */
+#quickFab{position:fixed;bottom:26px;right:26px;width:58px;height:58px;border-radius:50%;background:var(--acc);color:#000;border:none;font-size:32px;font-weight:300;cursor:pointer;z-index:600;box-shadow:0 6px 24px var(--acc-dim),0 4px 12px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;line-height:1;transition:transform .2s,box-shadow .2s;}
+#quickFab:hover{transform:scale(1.1) rotate(90deg);box-shadow:0 8px 32px var(--acc-dim);}
+#quickFab:active{transform:scale(.95);}
+@media(max-width:880px){#quickFab{bottom:18px;right:18px;width:52px;height:52px;font-size:28px;}}
+
 </style>
 </head>
 <body>
 
 <div id="loader"><div class="ld-skull">💀</div><div class="ld-track"><div class="ld-fill"></div></div></div>
 <div id="toast-root"></div>
+<button id="quickFab" onclick="openQuickEntry()" title="Saisie express">+</button>
+
 
 <!-- LOGIN -->
 <div class="modal" id="loginModal">
@@ -510,6 +519,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <div class="page active" id="page-dashboard">
   <div id="objDisplay" style="margin-bottom:14px"></div>
   <div id="insights" style="margin-bottom:16px"></div>
+  <div id="forecast" style="margin-bottom:16px"></div>
   <div id="runWidget"></div>
   <div id="smartAlerts"></div>
   <div class="card" style="margin-bottom:14px">
@@ -1045,7 +1055,19 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ MISSIONS ═══ -->
 <div class="page" id="page-missions">
   <div class="g2" style="margin-bottom:14px">
+    <div class="g2" style="margin-bottom:16px">
     <div class="card">
+      <div class="card-title">📋 Nouvelle checklist de préparation</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Listes réutilisables avant un gros coup (équipement, rôles, plan B...)</p>
+      <div class="form-group"><label class="form-label">Nom</label><input id="clName" placeholder="Préparation braquage Fleeca"></div>
+      <div class="form-group"><label class="form-label">Étapes (une par ligne)</label><textarea id="clItems" rows="5" placeholder="Vérifier les armes&#10;Voitures de fuite prêtes&#10;Repérage fait&#10;Rôles attribués"></textarea></div>
+      <button class="btn btn-blue" onclick="addChecklist()">+ Créer la checklist</button>
+    </div>
+    <div>
+      <div id="checklistsList"></div>
+    </div>
+  </div>
+  <div class="card">
       <div class="card-title">🎯 Nouvelle Mission</div>
       <div class="form-group"><label class="form-label">Titre</label><input id="misTitre" placeholder="Livraison Zaibatsu"></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Priorité</label><select id="misPrio"><option value="haute">🔴 Haute</option><option value="moyenne">🟡 Moyenne</option><option value="basse">🟢 Basse</option></select></div><div class="form-group"><label class="form-label">Récompense ($)</label><input type="number" id="misRecomp" placeholder="50000" min="0"></div></div>
@@ -1077,7 +1099,20 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ CONFIG ═══ -->
 <div class="page" id="page-config">
   <div class="g2" style="margin-bottom:14px">
-    <div class="card">
+    <div class="card" style="margin-bottom:16px">
+    <div class="card-title">🎨 Identité du club</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px">Personnalise le nom, l'icône et la couleur de ton MC. Visible par tous les membres.</p>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nom du club</label><input id="idName" placeholder="ICE CROWS MC"></div>
+      <div class="form-group"><label class="form-label">Sous-titre</label><input id="idSub" placeholder="FiveM · Manager"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Icône (emoji)</label><input id="idIcon" placeholder="💀" maxlength="4" style="font-size:20px"></div>
+      <div class="form-group"><label class="form-label">Couleur d'accent</label><input type="color" id="idAccent" value="#ff6a1a"></div>
+    </div>
+    <button class="btn btn-blue" onclick="saveIdentity()">💾 Appliquer l'identité</button>
+  </div>
+  <div class="card">
       <div class="card-title">🎖 Grades — Ordre & Attributs</div>
       <p style="color:var(--muted);font-size:11px;margin-bottom:10px">Glissez pour réordonner. Cliquez ✏ pour modifier.</p>
       <div id="gradesList"></div>
@@ -1310,7 +1345,7 @@ function getVisibleCommandes(){
 
 // ═══ STATE ═══
 let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1};
-let S={mcPct:60,grades:[],membres:[],ops:[],stock:[],stockLog:[],events:[],vehicles:[],sanctions:[],missions:[],reglement:[],items:[],drugs:[],armes:[],commandes:[],clients:[],bankMoves:[],perms:{},daily:{superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}},weekly:{bijouterie:0,humanlab:0},annonces:[],connexions:[],feed:[],polls:[]};
+let S={mcPct:60,grades:[],membres:[],ops:[],stock:[],stockLog:[],events:[],vehicles:[],sanctions:[],missions:[],reglement:[],items:[],drugs:[],armes:[],commandes:[],clients:[],bankMoves:[],perms:{},daily:{superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}},weekly:{bijouterie:0,humanlab:0},annonces:[],connexions:[],feed:[],polls:[],checklists:[],identity:{name:'ICE CROWS MC',sub:'FiveM · Manager',icon:'💀',accent:'#ff6a1a'}};
 let currentUser=null,db,FB,itemsQte={},currentItemFilter='tous',currentSub='cambriolage';
 let cmdLines=[];let dragSrcGrade=null;
 
@@ -1319,14 +1354,14 @@ document.addEventListener('firebase-ready',async()=>{
   db=window.__db;FB=window.__fb;
   document.getElementById('loader').style.display='none';
   try{const rs=localStorage.getItem('icecrows_run');if(rs)runSession=JSON.parse(rs);}catch(e){}
-  await loadAll();setupListeners();showLogin();startClock();try{applyTheme(localStorage.getItem('icecrows_theme')||'dark');}catch(e){}setInterval(checkEventReminders,60000);
+  await loadAll();applyIdentity();setupListeners();showLogin();startClock();try{applyTheme(localStorage.getItem('icecrows_theme')||'dark');}catch(e){}setInterval(checkEventReminders,60000);
 });
 
 async function loadAll(){
-  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls'};S.objective=null;
+  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls',checklists:'checklists'};S.objective=null;
   for(const[col,key]of Object.entries(cols)){try{const snap=await FB.getDocs(FB.collection(db,col));S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));}catch(e){}}
   S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));
-  try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);}}catch(e){}
+  try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);}}catch(e){}
   try{const d=await FB.getDoc(FB.doc(db,'config','daily'));if(d.exists())Object.assign(S.daily,d.data());}catch(e){}
   try{const w=await FB.getDoc(FB.doc(db,'config','weekly'));if(w.exists())Object.assign(S.weekly,w.data());}catch(e){}
   if(!S.grades.length)await initDefaultGrades();
@@ -1341,11 +1376,12 @@ function setupListeners(){
   Object.entries(colKeys).forEach(([col,key])=>{
     FB.onSnapshot(FB.collection(db,col),snap=>{S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));if(col==='ops')S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));renderAll();});
   });
-  FB.onSnapshot(FB.doc(db,'config','main'),snap=>{if(snap.exists()){const d=snap.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);renderAll();}});
+  FB.onSnapshot(FB.doc(db,'config','main'),snap=>{if(snap.exists()){const d=snap.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);renderAll();}});
   FB.onSnapshot(FB.doc(db,'config','objective'),snap=>{S.objective=snap.exists()?{...snap.data(),_id:snap.id}:null;renderDashboard();});
   FB.onSnapshot(FB.doc(db,'config','daily'),snap=>{if(snap.exists()){Object.assign(S.daily,snap.data());renderLimits();}});
   FB.onSnapshot(FB.doc(db,'config','weekly'),snap=>{if(snap.exists()){Object.assign(S.weekly,snap.data());renderLimits();}});
   setupActivityListener();
+  FB.onSnapshot(FB.collection(db,'checklists'),snap=>{S.checklists=[];snap.forEach(d=>S.checklists.push({...d.data(),_id:d.id}));renderChecklists();});
   FB.onSnapshot(FB.collection(db,'feed'),snap=>{S.feed=[];snap.forEach(d=>S.feed.push({...d.data(),_id:d.id}));renderFeed();});
   FB.onSnapshot(FB.collection(db,'polls'),snap=>{S.polls=[];snap.forEach(d=>S.polls.push({...d.data(),_id:d.id}));renderPolls();});
   FB.onSnapshot(FB.collection(db,'annonces'),snap=>{S.annonces=[];snap.forEach(d=>S.annonces.push({...d.data(),_id:d.id}));renderAnnonces();});
@@ -1360,7 +1396,7 @@ async function fbUpd(c,i,d){try{await FB.updateDoc(FB.doc(db,c,i),d);}catch(e){c
 async function fbDel(c,i){try{await FB.deleteDoc(FB.doc(db,c,i));}catch(e){console.error(e);}}
 function saveDaily(){fbSet('config','daily',S.daily);}
 function saveWeekly(){fbSet('config','weekly',S.weekly);}
-function saveCfg(){fbSet('config','main',{mcPct:S.mcPct,perms:S.perms,lim:{...LIM}});}
+function saveCfg(){fbSet('config','main',{mcPct:S.mcPct,perms:S.perms,lim:{...LIM},identity:S.identity});}
 function saveLimits(){if(!isAdmin())return notify('Admin uniquement','err');['superette','ammu','atm','cambriolage','conteneur','bijouterie','humanlab'].forEach(k=>{const el=document.getElementById('lim-'+k);if(el){const v=+el.value;if(v>0)LIM[k]=v;}});saveCfg();notify('✅ Limites sauvegardées','ok');}
 
 // ═══ UTILS ═══
@@ -1790,6 +1826,170 @@ function renderTV(){
     +'<div class="tv-foot">Mise à jour auto · '+nowStr()+'</div>';
   var tc=document.getElementById('tvClock');
   if(tc)tc.textContent=new Date().toLocaleString('fr-FR',{weekday:'long',hour:'2-digit',minute:'2-digit'});
+}
+
+
+// ── IDENTITÉ DU CLUB ──
+function applyIdentity(){
+  var id=S.identity||{};
+  var nameEl=document.querySelector('.hlogo-name');if(nameEl)nameEl.textContent=id.name||'ICE CROWS MC';
+  var subEl=document.querySelector('.hlogo-sub');if(subEl)subEl.textContent=id.sub||'FiveM · Manager';
+  var icoEl=document.querySelector('.hlogo-icon');if(icoEl)icoEl.textContent=id.icon||'💀';
+  document.title=(id.name||'ICE CROWS MC');
+  if(id.accent){
+    document.documentElement.style.setProperty('--acc',id.accent);
+    document.documentElement.style.setProperty('--acc-dim',id.accent+'22');
+    // accent clair pour hover
+    document.documentElement.style.setProperty('--acc-h',id.accent);
+  }
+  // login modal title
+  var lm=document.querySelector('#loginModal h2');if(lm)lm.textContent=id.name||'ICE CROWS MC';
+  var lmi=document.querySelector('#loginModal .mbox-icon');if(lmi)lmi.textContent=id.icon||'💀';
+}
+async function saveIdentity(){
+  if(!isAdmin())return notify('Admin uniquement','err');
+  S.identity={
+    name:(document.getElementById('idName').value.trim()||'ICE CROWS MC'),
+    sub:(document.getElementById('idSub').value.trim()||'FiveM · Manager'),
+    icon:(document.getElementById('idIcon').value.trim()||'💀'),
+    accent:(document.getElementById('idAccent').value||'#ff6a1a')
+  };
+  saveCfg();applyIdentity();
+  notify('✅ Identité du club mise à jour','ok');
+}
+function renderIdentityForm(){
+  var id=S.identity||{};
+  var n=document.getElementById('idName');if(n&&!n.value)n.value=id.name||'';
+  var s=document.getElementById('idSub');if(s&&!s.value)s.value=id.sub||'';
+  var i=document.getElementById('idIcon');if(i&&!i.value)i.value=id.icon||'';
+  var a=document.getElementById('idAccent');if(a)a.value=id.accent||'#ff6a1a';
+}
+
+
+// ── SAISIE EXPRESS (bouton flottant) ──
+function openQuickEntry(){
+  var m=document.getElementById('quickModal');if(m)m.remove();
+  m=document.createElement('div');m.id='quickModal';m.className='modal show';
+  var drugOpts=S.membres.map(function(mb){return '<option value="'+mb._id+'">'+mb.name+'</option>';}).join('');
+  var partChecks=S.membres.map(function(mb){var g=getGrade(mb.gradeId);return '<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--card2);border-radius:5px;font-size:12px;cursor:pointer"><input type="checkbox" value="'+mb._id+'" style="width:13px;height:13px;accent-color:var(--acc)"> '+mb.name+'</label>';}).join('');
+  m.innerHTML='<div class="mbox" style="max-width:480px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><h2 style="text-align:left;font-size:20px">⚡ Saisie express</h2><button onclick="document.getElementById(\'quickModal\').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">✕</button></div>'
+    +'<p class="sub" style="text-align:left;margin-bottom:18px">Déclare un gain en quelques secondes</p>'
+    +'<div class="form-group"><label class="form-label">Type d\u2019opération</label><select id="qkType"><option value="superette">🏪 Superette</option><option value="ammu">🔧 Ammunation</option><option value="atm">🏧 ATM</option><option value="train">🚂 Train</option><option value="fleeca">🏦 Fleeca</option><option value="autre">⚡ Autre (cash)</option></select></div>'
+    +'<div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="qkMontant" placeholder="50000" autofocus></div>'
+    +'<div class="form-group"><label class="form-label">Participants</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:180px;overflow-y:auto;background:var(--bg3);padding:8px;border-radius:6px;border:1px solid var(--border)" id="qkPart">'+partChecks+'</div></div>'
+    +'<div id="qkPreview" style="font-size:12px;color:var(--muted2);margin-bottom:12px"></div>'
+    +'<button class="btn btn-blue" style="width:100%" onclick="submitQuickEntry()">⚡ Enregistrer & distribuer</button>'
+    +'</div>';
+  document.body.appendChild(m);
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  var mt=document.getElementById('qkMontant');
+  var upd=function(){
+    var montant=+mt.value||0;
+    var pids=[].slice.call(document.querySelectorAll('#qkPart input:checked')).map(function(c){return c.value;});
+    var pv=document.getElementById('qkPreview');
+    if(montant>0&&pids.length){var res=distribute(montant,pids);pv.innerHTML='MC : <strong style="color:var(--acc)">'+fmt(res.mc)+'</strong> · '+pids.length+' membre(s) se partagent <strong style="color:var(--teal)">'+fmt(res.toShare)+'</strong>';}
+    else pv.innerHTML='';
+  };
+  mt.oninput=upd;
+  m.querySelectorAll('#qkPart input').forEach(function(c){c.onchange=upd;});
+  setTimeout(function(){mt.focus();},100);
+}
+async function submitQuickEntry(){
+  var type=document.getElementById('qkType').value;
+  var montant=+document.getElementById('qkMontant').value||0;
+  var pids=[].slice.call(document.querySelectorAll('#qkPart input:checked')).map(function(c){return c.value;});
+  if(montant<=0)return notify('Montant invalide','err');
+  if(!pids.length)return notify('Sélectionnez au moins un participant','err');
+  var res=distribute(montant,pids);
+  var labels={superette:'Superette',ammu:'Ammunation',atm:'ATM',train:'Train',fleeca:'Fleeca',autre:'Opération'};
+  await fbAdd('ops',{type:type,typeLabel:labels[type]||'Opération',montant:montant,mc:res.mc,toShare:res.toShare,shares:res.shares,contenu:'',notes:'Saisie express',date:nowStr(),ts:Date.now()});
+  if(typeof pushFeed==='function')pushFeed('a déclaré '+(labels[type]||'une op')+' de '+fmt(montant)+' (express)','⚡');
+  document.getElementById('quickModal').remove();
+  notify('✅ '+(labels[type]||'Opération')+' enregistrée : '+fmt(montant),'ok');
+}
+
+
+// ── PRÉVISIONS INTELLIGENTES (mois en cours) ──
+function monthForecast(){
+  var now=new Date();
+  var monthStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  var daysElapsed=Math.max((Date.now()-monthStart)/864e5,0.5);
+  var daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  var monthOps=S.ops.filter(function(o){return (o.ts||0)>=monthStart;});
+  var earned=monthOps.reduce(function(s,o){return s+(o.montant||0);},0);
+  var perDay=earned/daysElapsed;
+  var projected=Math.round(perDay*daysInMonth);
+  // Mois précédent (même nb de jours écoulés pour comparaison équitable)
+  var prevStart=new Date(now.getFullYear(),now.getMonth()-1,1).getTime();
+  var prevEnd=monthStart;
+  var prevTotal=sumOpsBetween(prevStart,prevEnd);
+  return{earned:earned,perDay:perDay,projected:projected,daysElapsed:Math.floor(daysElapsed),daysInMonth:daysInMonth,prevTotal:prevTotal,ops:monthOps.length};
+}
+function renderForecast(){
+  var el=document.getElementById('forecast');if(!el)return;
+  var f=monthForecast();
+  var vsPrev=f.prevTotal>0?Math.round((f.projected-f.prevTotal)/f.prevTotal*100):0;
+  var monthName=new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  // Détection ralentissement : rythme 7 derniers jours vs 7 jours précédents
+  var t=weekTrend();
+  var slowdown=!t.up&&t.pct>=20;
+
+  var h='<div class="card"><div class="card-title">🔮 Prévisions · '+monthName+'</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">';
+  h+='<div class="stat gold"><div class="stat-val">'+fmt(f.earned)+'</div><div class="stat-label">Généré ce mois</div><div class="stat-sub">'+f.ops+' ops · '+f.daysElapsed+'j écoulés</div></div>';
+  h+='<div class="stat blue"><div class="stat-val">'+fmt(f.projected)+'</div><div class="stat-label">Projection fin de mois</div><div class="stat-sub">'+(vsPrev>=0?'+':'')+vsPrev+'% vs mois dernier</div></div>';
+  h+='</div>';
+  // Barre de progression vers la projection
+  var pct=f.projected>0?Math.min(Math.round(f.earned/f.projected*100),100):0;
+  h+='<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Avancement du mois</div><div class="pbar"><div class="pfill pblue" style="width:'+pct+'%"></div></div>';
+  h+='<div style="font-size:12px;color:var(--muted2);margin-top:10px">📈 Rythme actuel : <strong style="color:var(--teal)">'+fmt(Math.round(f.perDay))+'/jour</strong></div>';
+  if(slowdown)h+='<div style="margin-top:12px;padding:11px 13px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;font-size:12px;color:var(--red)">⚠️ Ralentissement détecté : -'+t.pct+'% cette semaine. Le club mollit.</div>';
+  else if(t.up&&t.pct>=20)h+='<div style="margin-top:12px;padding:11px 13px;background:rgba(22,199,154,.1);border:1px solid rgba(22,199,154,.3);border-radius:7px;font-size:12px;color:var(--teal)">🚀 Le club accélère : +'+t.pct+'% cette semaine !</div>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+// ── CHECKLISTS DE PRÉPARATION ──
+async function addChecklist(){
+  if(!currentUser)return notify('Connectez-vous','err');
+  var name=document.getElementById('clName').value.trim();
+  var items=document.getElementById('clItems').value.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
+  if(!name||!items.length)return notify('Nom + au moins une étape requis','err');
+  await fbAdd('checklists',{name:name,items:items,checked:{},auteur:currentUser.name,date:nowStr(),ts:Date.now()});
+  document.getElementById('clName').value='';document.getElementById('clItems').value='';
+  notify('✅ Checklist créée','ok');
+}
+async function toggleCheck(clId,idx){
+  var cl=S.checklists.find(function(c){return c._id===clId;});if(!cl)return;
+  var checked=cl.checked||{};
+  checked[idx]=!checked[idx];
+  await fbUpd('checklists',clId,{checked:checked});
+}
+async function resetChecklist(clId){
+  var cl=S.checklists.find(function(c){return c._id===clId;});if(!cl)return;
+  await fbUpd('checklists',clId,{checked:{}});
+  notify('Checklist réinitialisée','ok');
+}
+async function delChecklist(clId){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Supprimer cette checklist ?'))return;await fbDel('checklists',clId);}
+function renderChecklists(){
+  var el=document.getElementById('checklistsList');if(!el)return;
+  var list=[].concat(S.checklists||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  if(!list.length){el.innerHTML='<div class="es">Aucune checklist. Créez-en une pour préparer vos coups.</div>';return;}
+  el.innerHTML=list.map(function(cl){
+    var checked=cl.checked||{};
+    var done=cl.items.filter(function(_,i){return checked[i];}).length;
+    var pct=Math.round(done/cl.items.length*100);
+    var h='<div class="card" style="margin-bottom:12px"><div class="card-head"><span>📋 '+cl.name+'</span><span class="mono" style="font-size:12px;color:'+(pct===100?'var(--teal)':'var(--gold)')+'">'+done+'/'+cl.items.length+'</span></div>';
+    h+='<div class="pbar" style="margin-bottom:12px"><div class="pfill '+(pct===100?'pteal':'pgold')+'" style="width:'+pct+'%"></div></div>';
+    cl.items.forEach(function(it,i){
+      var ok=checked[i];
+      h+='<label style="display:flex;align-items:center;gap:9px;padding:7px 0;cursor:pointer;font-size:13px;'+(ok?'opacity:.55;text-decoration:line-through':'')+'"><input type="checkbox" '+(ok?'checked':'')+' onchange="toggleCheck(\''+cl._id+'\','+i+')" style="width:16px;height:16px;accent-color:var(--teal)"> '+it+'</label>';
+    });
+    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn btn-ghost btn-xs" onclick="resetChecklist(\''+cl._id+'\')">↺ Réinitialiser</button>'+(isAdmin()?'<button class="btn btn-red btn-xs" onclick="delChecklist(\''+cl._id+'\')">✕ Supprimer</button>':'')+'</div>';
+    h+='<div style="font-size:10px;color:var(--muted);margin-top:8px">Créée par '+cl.auteur+'</div></div>';
+    return h;
+  }).join('');
 }
 
 // ── CARTE DE LA SEMAINE (bilan hebdo style jeu) ──
@@ -2713,7 +2913,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
