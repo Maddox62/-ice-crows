@@ -1140,6 +1140,15 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     <button class="btn btn-blue btn-sm" style="margin-top:12px" onclick="savePerms()">💾 SAUVEGARDER LES PERMISSIONS</button>
   </div>
   <div class="card" style="margin-top:14px">
+    <div class="card-title">🔒 Permissions des actions sensibles</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn btn-ghost btn-sm" onclick="applyPermPreset('strict')">🔐 Préréglage Strict</button>
+      <button class="btn btn-ghost btn-sm" onclick="applyPermPreset('equilibre')">⚖️ Préréglage Équilibré</button>
+      <button class="btn btn-ghost btn-sm" onclick="applyPermPreset('souple')">🔓 Préréglage Souple</button>
+    </div>
+    <div id="actionPermsList"></div>
+  </div>
+  <div class="card" style="margin-top:14px">
     <div class="card-title">✏ Modifier un Membre</div>
     <div class="form-row3">
       <div class="form-group"><label class="form-label">Membre à modifier</label><select id="editMembreId" onchange="loadEditMembre()"></select></div>
@@ -1321,7 +1330,7 @@ function showEditOp(id){
   document.getElementById('editOpModal').classList.add('show');
 }
 function hideEditOp(){document.getElementById('editOpModal').classList.remove('show');}
-async function saveEditOp(){
+async function saveEditOp(){if(!requireAction('edit_ops'))return;
   const id=document.getElementById('editOpId').value;
   const montant=+document.getElementById('editOpMontant').value;
   const notes=document.getElementById('editOpNotes').value;
@@ -1436,6 +1445,98 @@ function setUser(m){
 }
 
 // ═══ PERMISSIONS ═══
+
+// ════════════════════════════════════════════
+//  PERMISSIONS GRANULAIRES PAR ACTION
+// ════════════════════════════════════════════
+// Niveaux : admin > officer > member > prospect
+var PERM_RANK={admin:3,officer:2,member:1,prospect:0};
+// Actions sensibles et leur niveau minimum requis (défaut). Surchargé par S.actionPerms (Config).
+var ACTION_DEFAULTS={
+  delete_anything:'admin',      // supprimer membres, ops, commandes, etc.
+  edit_salaires:'officer',      // payer / modifier salaires
+  manage_bank:'officer',        // mouvements bancaires
+  validate_commande:'officer',  // changer statut commande
+  manage_stock:'member',        // ajouter/vendre stock
+  manage_members:'admin',       // ajouter/éditer membres
+  manage_sanctions:'officer',   // donner des sanctions
+  reset_limits:'admin',         // reset journalier/hebdo
+  manage_armory:'officer',      // armurerie
+  manage_garage:'member',       // véhicules
+  edit_ops:'officer'            // modifier/supprimer une opération
+};
+function getActionPerm(action){
+  if(S.actionPerms&&S.actionPerms[action])return S.actionPerms[action];
+  return ACTION_DEFAULTS[action]||'admin';
+}
+function canDo(action){
+  if(isAdmin())return true; // admin peut tout
+  var required=getActionPerm(action);
+  var mine=getPerms();
+  return (PERM_RANK[mine]||0)>=(PERM_RANK[required]||3);
+}
+function requireAction(action){
+  if(canDo(action))return true;
+  notify('🔒 Action réservée — permission insuffisante','err');
+  return false;
+}
+
+// Réglage dans Config : matrice des permissions d'action
+var ACTION_LABELS={
+  delete_anything:'🗑️ Supprimer (membres, ops, commandes...)',
+  edit_salaires:'💰 Payer / modifier les salaires',
+  manage_bank:'🏦 Mouvements bancaires',
+  validate_commande:'📦 Changer le statut des commandes',
+  manage_stock:'📦 Gérer le stock (ajout/vente)',
+  manage_members:'👥 Ajouter / modifier des membres',
+  manage_sanctions:'⚖️ Donner des sanctions',
+  reset_limits:'♻️ Réinitialiser les limites jour/semaine',
+  manage_armory:'🔫 Gérer l\u2019armurerie',
+  manage_garage:'🏍️ Gérer le garage',
+  edit_ops:'✏️ Modifier / supprimer une opération'
+};
+function renderActionPerms(){
+  var el=document.getElementById('actionPermsList');if(!el)return;
+  var levels=[['admin','Admin'],['officer','Officier'],['member','Membre'],['prospect','Recrue']];
+  var h='<p style="font-size:11px;color:var(--muted);margin-bottom:14px">Définis le niveau minimum requis pour chaque action sensible. Les admins peuvent toujours tout faire.</p>';
+  h+='<div style="display:flex;flex-direction:column;gap:9px">';
+  Object.keys(ACTION_LABELS).forEach(function(action){
+    var cur=getActionPerm(action);
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:7px">'
+      +'<span style="font-size:12.5px">'+ACTION_LABELS[action]+'</span>'
+      +'<select id="ap-'+action+'" onchange="saveActionPerms()" style="width:auto;min-width:110px">'
+      +levels.map(function(l){return '<option value="'+l[0]+'"'+(cur===l[0]?' selected':'')+'>'+l[1]+'+</option>';}).join('')
+      +'</select></div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+async function saveActionPerms(){
+  if(!isAdmin())return notify('Admin uniquement','err');
+  var ap={};
+  Object.keys(ACTION_LABELS).forEach(function(action){
+    var el=document.getElementById('ap-'+action);
+    if(el)ap[action]=el.value;
+  });
+  S.actionPerms=ap;
+  fbSet('config','actionPerms',ap);
+  notify('✅ Permissions mises à jour','ok');
+}
+
+// Préréglages
+function applyPermPreset(preset){
+  if(!isAdmin())return notify('Admin uniquement','err');
+  var presets={
+    strict:{delete_anything:'admin',edit_salaires:'admin',manage_bank:'admin',validate_commande:'officer',manage_stock:'officer',manage_members:'admin',manage_sanctions:'admin',reset_limits:'admin',manage_armory:'officer',manage_garage:'officer',edit_ops:'admin'},
+    equilibre:{delete_anything:'admin',edit_salaires:'officer',manage_bank:'officer',validate_commande:'officer',manage_stock:'member',manage_members:'admin',manage_sanctions:'officer',reset_limits:'admin',manage_armory:'officer',manage_garage:'member',edit_ops:'officer'},
+    souple:{delete_anything:'officer',edit_salaires:'officer',manage_bank:'member',validate_commande:'member',manage_stock:'member',manage_members:'officer',manage_sanctions:'officer',reset_limits:'officer',manage_armory:'member',manage_garage:'member',edit_ops:'member'}
+  };
+  S.actionPerms=presets[preset]||presets.equilibre;
+  fbSet('config','actionPerms',S.actionPerms);
+  renderActionPerms();
+  notify('✅ Préréglage "'+preset+'" appliqué','ok');
+}
+
 function getPerms(){if(!currentUser)return'prospect';const g=getGrade(currentUser.gradeId);return g?(g.perms||'member'):'prospect';}
 function isAdmin(){return getPerms()==='admin';}
 function canAccessTab(tab){
@@ -2665,7 +2766,7 @@ async function submitVenteStock(){
 }
 
 // ═══ ARMURERIE ═══
-async function addArme(){
+async function addArme(){if(!requireAction('manage_armory'))return;
   if(!canAccessTab('armurerie'))return notify('Accès refusé','err');
   const itemId=document.getElementById('armItem').value;const ownerId=document.getElementById('armOwner').value;
   if(!itemId)return notify('Choisissez une arme','err');if(!ownerId)return notify('Choisissez un propriétaire','err');
@@ -2673,8 +2774,8 @@ async function addArme(){
   await fbAdd('armes',{itemId,itemNom:item?item.nom:'?',prixAchat:item?item.prix:0,ownerId,ownerNom:owner?owner.name:'?',serial:document.getElementById('armSerial').value.trim(),etat:document.getElementById('armEtat').value,notes:document.getElementById('armNotes').value.trim(),date:nowStr()});
   notify('✅ Arme enregistrée !','ok');document.getElementById('armSerial').value='';document.getElementById('armNotes').value='';
 }
-async function delArme(id){await fbDel('armes',id);}
-async function updArmeEtat(id,etat){await fbUpd('armes',id,{etat});}
+async function delArme(id){if(!requireAction('delete_anything'))return;await fbDel('armes',id);}
+async function updArmeEtat(id,etat){if(!requireAction('manage_armory'))return;await fbUpd('armes',id,{etat});}
 
 // ═══ COMMANDES ═══
 let cmdLineCount=0;
@@ -2722,11 +2823,11 @@ async function submitCommande(){
 
 function isArchived(c){return c.statut==='terminee';}
 
-async function updCommande(id,statut){const upd={statut};if(statut==='terminee'){upd.archived=true;upd.archivedAt=nowStr();}else{upd.archived=false;}await fbUpd('commandes',id,upd);const lbl={attente:'en attente',prete:'prête',livree:'livrée',payee:'payée',terminee:'terminée et archivée',annulee:'annulée'};notify('Commande '+(lbl[statut]||statut),'ok');}
-async function delCommande(id){if(!confirm('Supprimer définitivement cette commande ?'))return;await fbDel('commandes',id);notify('Commande supprimée','ok');}
+async function updCommande(id,statut){if(!requireAction('validate_commande'))return;const upd={statut};if(statut==='terminee'){upd.archived=true;upd.archivedAt=nowStr();}else{upd.archived=false;}await fbUpd('commandes',id,upd);const lbl={attente:'en attente',prete:'prête',livree:'livrée',payee:'payée',terminee:'terminée et archivée',annulee:'annulée'};notify('Commande '+(lbl[statut]||statut),'ok');}
+async function delCommande(id){if(!requireAction('delete_anything'))return;if(!confirm('Supprimer définitivement cette commande ?'))return;await fbDel('commandes',id);notify('Commande supprimée','ok');}
 
 // ═══ BANQUE ═══
-async function addBankMove(){
+async function addBankMove(){if(!requireAction('manage_bank'))return;
   if(!isAdmin())return notify('Admin uniquement','err');
   const type=document.getElementById('bankType').value;const montant=+document.getElementById('bankMontant').value;
   if(!montant||montant<=0)return notify('Montant invalide','err');
@@ -2734,8 +2835,8 @@ async function addBankMove(){
   await fbAdd('bankMoves',{type,montant,cat,membreId:mid,membreNom:m?m.name:'',notes:document.getElementById('bankNotes').value.trim(),date:nowStr(),ts:Date.now()});
   document.getElementById('bankMontant').value='';document.getElementById('bankNotes').value='';notify('✅ Mouvement enregistré !','ok');
 }
-async function delBankMove(id){await fbDel('bankMoves',id);}
-async function addSalairePaye(){
+async function delBankMove(id){if(!requireAction('delete_anything'))return;await fbDel('bankMoves',id);}
+async function addSalairePaye(){if(!requireAction('edit_salaires'))return;
   if(!isAdmin())return notify('Admin uniquement','err');
   const mid=document.getElementById('salPayMembre').value;const montant=+document.getElementById('salPayMontant').value;
   if(!mid||!montant)return notify('Membre et montant requis','err');
@@ -2763,10 +2864,10 @@ async function saveGradeEdit(id){
 }
 
 // ═══ MEMBRES CRUD ═══
-async function addMembre(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('mNom').value.trim(),g=document.getElementById('mGrade').value;if(!n||!g)return notify('Nom et grade requis','err');await fbAdd('membres',{name:n,gradeId:g,tel:document.getElementById('mTel').value.trim(),discord:document.getElementById('mDiscord').value.trim(),pin:document.getElementById('mPin').value||'0000',notes:document.getElementById('mNotes').value.trim(),joinDate:nowStr()});notify(`✅ "${n}" ajouté`,'ok');document.getElementById('mNom').value='';}
-async function delMembre(id){if(!isAdmin())return;const m=getMembre(id);if(!confirm('Supprimer le membre '+(m?m.name:'')+' ? Cette action est irréversible.'))return;await fbDel('membres',id);notify('Membre supprimé','ok');}
+async function addMembre(){if(!requireAction('manage_members'))return;const n=document.getElementById('mNom').value.trim(),g=document.getElementById('mGrade').value;if(!n||!g)return notify('Nom et grade requis','err');await fbAdd('membres',{name:n,gradeId:g,tel:document.getElementById('mTel').value.trim(),discord:document.getElementById('mDiscord').value.trim(),pin:document.getElementById('mPin').value||'0000',notes:document.getElementById('mNotes').value.trim(),joinDate:nowStr()});notify(`✅ "${n}" ajouté`,'ok');document.getElementById('mNom').value='';}
+async function delMembre(id){if(!requireAction('delete_anything'))return;const m=getMembre(id);if(!confirm('Supprimer le membre '+(m?m.name:'')+' ? Cette action est irréversible.'))return;await fbDel('membres',id);notify('Membre supprimé','ok');}
 function loadEditMembre(){const id=document.getElementById('editMembreId').value;const m=getMembre(id);if(!m)return;document.getElementById('editMembreNom').value=m.name;document.getElementById('editMembreDc').value=m.discord||'';document.getElementById('editMembreTel').value=m.tel||'';document.getElementById('editMembreNotes').value=m.notes||'';document.getElementById('editMembreGrade').value=m.gradeId||'';document.getElementById('editMembrePin').value='';}
-async function saveEditMembre(){
+async function saveEditMembre(){if(!requireAction('manage_members'))return;
   if(!isAdmin())return notify('Admin uniquement','err');
   const id=document.getElementById('editMembreId').value;if(!id)return notify('Choisissez un membre','err');
   const upd={name:document.getElementById('editMembreNom').value.trim(),gradeId:document.getElementById('editMembreGrade').value,discord:document.getElementById('editMembreDc').value.trim(),tel:document.getElementById('editMembreTel').value.trim(),notes:document.getElementById('editMembreNotes').value.trim()};
@@ -2817,24 +2918,24 @@ async function savePerms(){
   saveCfg();notify('✅ Permissions sauvegardées','ok');
 }
 async function addEvent(){if(!canAccessTab('agenda'))return notify('Accès refusé','err');const t=document.getElementById('evtTitre').value.trim(),d=document.getElementById('evtDate').value;if(!t||!d)return notify('Titre et date requis','err');await fbAdd('events',{titre:t,type:document.getElementById('evtType').value,date:d,lieu:document.getElementById('evtLieu').value.trim(),desc:document.getElementById('evtDesc').value.trim(),by:currentUser?currentUser.name:'?',ts:Date.now()});notify('✅ Planifié !','ok');['evtTitre','evtLieu','evtDesc'].forEach(i=>document.getElementById(i).value='');}
-async function delEvent(id){await fbDel('events',id);}
-async function addVehicle(){if(!canAccessTab('garage'))return notify('Accès refusé','err');const n=document.getElementById('vNom').value.trim();if(!n)return notify('Nom requis','err');await fbAdd('vehicles',{nom:n,plaque:document.getElementById('vPlaque').value,owner:document.getElementById('vOwner').value,type:document.getElementById('vType').value,statut:document.getElementById('vStatut').value,valeur:+document.getElementById('vValeur').value||0,notes:document.getElementById('vNotes').value});notify('✅ Véhicule ajouté !','ok');document.getElementById('vNom').value='';}
-async function updVehicle(id,s){await fbUpd('vehicles',id,{statut:s});}
-async function delVehicle(id){await fbDel('vehicles',id);}
+async function delEvent(id){if(!requireAction('delete_anything'))return;await fbDel('events',id);}
+async function addVehicle(){if(!requireAction('manage_garage'))return;if(!canAccessTab('garage'))return notify('Accès refusé','err');const n=document.getElementById('vNom').value.trim();if(!n)return notify('Nom requis','err');await fbAdd('vehicles',{nom:n,plaque:document.getElementById('vPlaque').value,owner:document.getElementById('vOwner').value,type:document.getElementById('vType').value,statut:document.getElementById('vStatut').value,valeur:+document.getElementById('vValeur').value||0,notes:document.getElementById('vNotes').value});notify('✅ Véhicule ajouté !','ok');document.getElementById('vNom').value='';}
+async function updVehicle(id,s){if(!requireAction('manage_garage'))return;await fbUpd('vehicles',id,{statut:s});}
+async function delVehicle(id){if(!requireAction('delete_anything'))return;await fbDel('vehicles',id);}
 function toggleSanctAmende(){document.getElementById('sanctAmendeRow').style.display=document.getElementById('sanctType').value==='amende'?'':'none';}
-async function addSanction(){if(!canAccessTab('sanctions'))return notify('Accès refusé','err');const mid=document.getElementById('sanctMembre').value,type=document.getElementById('sanctType').value,motif=document.getElementById('sanctMotif').value.trim();if(!mid||!motif)return notify('Membre et motif requis','err');const m=getMembre(mid);await fbAdd('sanctions',{membreId:mid,membreNom:m?m.name:'?',type,motif,decideur:document.getElementById('sanctDecideur').value,amende:type==='amende'?(+document.getElementById('sanctAmende').value||0):0,date:nowStr(),ts:Date.now()});notify('✅ Sanction enregistrée','ok');document.getElementById('sanctMotif').value='';}
-async function delSanction(id){await fbDel('sanctions',id);}
+async function addSanction(){if(!requireAction('manage_sanctions'))return;if(!canAccessTab('sanctions'))return notify('Accès refusé','err');const mid=document.getElementById('sanctMembre').value,type=document.getElementById('sanctType').value,motif=document.getElementById('sanctMotif').value.trim();if(!mid||!motif)return notify('Membre et motif requis','err');const m=getMembre(mid);await fbAdd('sanctions',{membreId:mid,membreNom:m?m.name:'?',type,motif,decideur:document.getElementById('sanctDecideur').value,amende:type==='amende'?(+document.getElementById('sanctAmende').value||0):0,date:nowStr(),ts:Date.now()});notify('✅ Sanction enregistrée','ok');document.getElementById('sanctMotif').value='';}
+async function delSanction(id){if(!requireAction('manage_sanctions'))return;await fbDel('sanctions',id);}
 async function addMission(){if(!canAccessTab('missions'))return notify('Accès refusé','err');const t=document.getElementById('misTitre').value.trim();if(!t)return notify('Titre requis','err');await fbAdd('missions',{titre:t,priorite:document.getElementById('misPrio').value,recomp:+document.getElementById('misRecomp').value||0,desc:document.getElementById('misDesc').value,assignes:getChecked('misAssignes'),statut:'en-cours',by:currentUser?currentUser.name:'?',date:nowStr(),ts:Date.now()});notify('✅ Mission créée !','ok');document.getElementById('misTitre').value='';}
 async function updMission(id,s){await fbUpd('missions',id,{statut:s});}
-async function delMission(id){await fbDel('missions',id);}
+async function delMission(id){if(!requireAction('delete_anything'))return;await fbDel('missions',id);}
 function toggleReglForm(show){document.getElementById('reglForm').style.display=show?'block':'none';document.getElementById('reglBtn').style.display=show?'none':'';}
 async function addReglement(){if(!isAdmin())return notify('Admin uniquement','err');const t=document.getElementById('reglTitre').value.trim(),b=document.getElementById('reglBody').value.trim();if(!t||!b)return notify('Titre et contenu requis','err');await fbAdd('reglement',{titre:t,body:b,order:S.reglement.length,date:nowStr()});notify('✅ Article ajouté','ok');document.getElementById('reglTitre').value='';document.getElementById('reglBody').value='';toggleReglForm(false);}
 async function delReglement(id){if(!isAdmin())return;await fbDel('reglement',id);}
 function filterItems(f){currentItemFilter=f;renderItemsBDD();}
-function resetDaily(){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Reset journalier ?'))return;S.daily={superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}};saveDaily();notify('✅ Reset journalier','ok');}
-function resetWeekly(){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Reset hebdomadaire (bijouterie & humanlab) ?'))return;S.weekly={bijouterie:0,humanlab:0};saveWeekly();notify('✅ Reset hebdo','ok');}
+function resetDaily(){if(!requireAction('reset_limits'))return;if(!confirm('Reset journalier ?'))return;S.daily={superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}};saveDaily();notify('✅ Reset journalier','ok');}
+function resetWeekly(){if(!requireAction('reset_limits'))return;if(!confirm('Reset hebdomadaire (bijouterie & humanlab) ?'))return;S.weekly={bijouterie:0,humanlab:0};saveWeekly();notify('✅ Reset hebdo','ok');}
 function computeSal(){const map={};S.ops.forEach(op=>{(op.shares||[]).forEach(sh=>{map[sh.membreId]=(map[sh.membreId]||0)+sh.amount;});});return Object.entries(map).map(([id,total])=>({id,total})).sort((a,b)=>b.total-a.total);}
-async function delOp(id){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Supprimer cette opération ?'))return;await fbDel('ops',id);notify('✅ Opération supprimée','ok');}
+async function delOp(id){if(!requireAction('edit_ops'))return;if(!confirm('Supprimer cette opération ?'))return;await fbDel('ops',id);notify('✅ Opération supprimée','ok');}
 async function clearOps(){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Effacer tout ?'))return;const snap=await FB.getDocs(FB.collection(db,'ops'));for(const d of snap.docs)await fbDel('ops',d.id);notify('✅ Historique effacé','ok');}
 function exportSal(){const totals=computeSal();const mc=S.ops.reduce((s,o)=>s+(o.mc||0),0);let txt='=== ICE CROWS MC — SALAIRES ===\n'+nowStr()+'\n\n';totals.forEach(t=>{const m=getMembre(t.id);const g=m?getGrade(m.gradeId):null;txt+=`${m?m.name:'?'} [${g?g.name:'?'}] : ${fmt(t.total)}\n`;});txt+=`\nCAISSE MC : ${fmt(mc)}`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='salaires_icecrows.txt';a.click();}
 // ═══ NAVIGATION ═══
@@ -2913,7 +3014,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();renderActionPerms();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
