@@ -352,6 +352,7 @@ input,select,textarea{transition:border-color .15s,box-shadow .15s;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
+    <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
   </div>
 </header>
@@ -429,6 +430,7 @@ input,select,textarea{transition:border-color .15s,box-shadow .15s;}
 
 <!-- ═══ MEMBRES ═══ -->
 <div class="page" id="page-membres">
+  <div class="card" style="margin-bottom:14px"><input id="membreSearch" placeholder="🔍 Rechercher un membre (nom, grade, discord)..." oninput="renderMembres()"></div>
   <div id="membresGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:14px;"></div>
   <div class="card" id="addMembreCard">
     <div class="card-title">➕ Ajouter un Membre</div>
@@ -1746,8 +1748,11 @@ async function submitCommande(){
   document.getElementById('cmdLines').innerHTML='';document.getElementById('cmdTotal').textContent='$0';cmdLineCount=0;
   document.getElementById('cmdNotes').value='';notify('✅ Commande enregistrée !','ok');
 }
+
+function isArchived(c){return c.archived===true||['payee','terminee','annulee'].includes(c.statut);}
+
 async function updCommande(id,statut){const upd={statut};if(statut==='payee'||statut==='annulee'||statut==='terminee'){upd.archived=true;upd.archivedAt=nowStr();}else{upd.archived=false;}await fbUpd('commandes',id,upd);const lbl={attente:'en attente',prete:'prête',livree:'livrée',payee:'payée et archivée',terminee:'terminée et archivée',annulee:'annulée et archivée'};notify('Commande '+(lbl[statut]||statut),'ok');}
-async function delCommande(id){await fbDel('commandes',id);}
+async function delCommande(id){if(!confirm('Supprimer définitivement cette commande ?'))return;await fbDel('commandes',id);notify('Commande supprimée','ok');}
 
 // ═══ BANQUE ═══
 async function addBankMove(){
@@ -1770,7 +1775,7 @@ async function addSalairePaye(){
 
 // ═══ GRADES CRUD + DRAG ═══
 async function addGrade(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('gNom').value.trim(),co=+document.getElementById('gCoeff').value,pc=+document.getElementById('gPct').value,cl=document.getElementById('gColor').value,pe=document.getElementById('gPerms').value;if(!n||!co||!pc)return notify('Remplissez tous les champs','err');const order=S.grades.length;await fbAdd('grades',{name:n,coeff:co,pct:pc,color:cl,perms:pe,order});notify(`✅ Grade "${n}" ajouté`,'ok');document.getElementById('gNom').value='';}
-async function delGrade(id){if(!isAdmin())return;if(S.membres.some(m=>m.gradeId===id))return notify('Des membres ont ce grade','err');await fbDel('grades',id);}
+async function delGrade(id){if(!isAdmin())return;if(S.membres.some(m=>m.gradeId===id))return notify('Des membres ont ce grade','err');if(!confirm('Supprimer ce grade ?'))return;await fbDel('grades',id);}
 function editGradeInline(id){
   const g=S.grades.find(x=>x._id===id);if(!g)return;
   const row=document.getElementById('gr-'+id);if(!row)return;
@@ -1788,7 +1793,7 @@ async function saveGradeEdit(id){
 
 // ═══ MEMBRES CRUD ═══
 async function addMembre(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('mNom').value.trim(),g=document.getElementById('mGrade').value;if(!n||!g)return notify('Nom et grade requis','err');await fbAdd('membres',{name:n,gradeId:g,tel:document.getElementById('mTel').value.trim(),discord:document.getElementById('mDiscord').value.trim(),pin:document.getElementById('mPin').value||'0000',notes:document.getElementById('mNotes').value.trim(),joinDate:nowStr()});notify(`✅ "${n}" ajouté`,'ok');document.getElementById('mNom').value='';}
-async function delMembre(id){if(!isAdmin())return;await fbDel('membres',id);}
+async function delMembre(id){if(!isAdmin())return;const m=getMembre(id);if(!confirm('Supprimer le membre '+(m?m.name:'')+' ? Cette action est irréversible.'))return;await fbDel('membres',id);notify('Membre supprimé','ok');}
 function loadEditMembre(){const id=document.getElementById('editMembreId').value;const m=getMembre(id);if(!m)return;document.getElementById('editMembreNom').value=m.name;document.getElementById('editMembreDc').value=m.discord||'';document.getElementById('editMembreTel').value=m.tel||'';document.getElementById('editMembreNotes').value=m.notes||'';document.getElementById('editMembreGrade').value=m.gradeId||'';document.getElementById('editMembrePin').value='';}
 async function saveEditMembre(){
   if(!isAdmin())return notify('Admin uniquement','err');
@@ -1830,7 +1835,7 @@ async function saveItemBDD(id){
   notify('✅ Item modifié','ok');
 }
 
-async function delItemBDD(id){if(!isAdmin())return;await fbDel('itemsBDD',id);}
+async function delItemBDD(id){if(!isAdmin())return;if(!confirm('Supprimer cet item ?'))return;await fbDel('itemsBDD',id);}
 async function addDrugType(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('dNom').value.trim();if(!n)return notify('Nom requis','err');await fbAdd('drugsBDD',{nom:n,date:nowStr()});notify(`✅ Drogue "${n}" ajoutée`,'ok');document.getElementById('dNom').value='';}
 async function delDrugType(id){if(!isAdmin())return;await fbDel('drugsBDD',id);}
 function saveMcPct(){if(!isAdmin())return notify('Admin uniquement','err');const v=+document.getElementById('mcPct').value;if(v<1||v>99)return notify('% invalide','err');S.mcPct=v;saveCfg();notify(`✅ Part MC : ${v}%`,'ok');}
@@ -1919,7 +1924,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
@@ -1975,7 +1980,10 @@ function renderDashboard(){
 }function renderMembres(){
   const gr=document.getElementById('membresGrid');if(!gr)return;
   if(!S.membres.length){gr.innerHTML='<div class="es">Aucun membre — faites le setup initial</div>';return;}
-  gr.innerHTML=S.membres.map(m=>{const g=getGrade(m.gradeId);const atmU=(S.daily.atmHist||[]).filter(a=>a.membreId===m._id).length;const cambU=(S.daily.cambByMembre&&S.daily.cambByMembre[m._id])||0;const contU=(S.daily.contByMembre&&S.daily.contByMembre[m._id])||0;return`<div class="card mcard" onclick="if(!event.target.closest('button'))openMemberProfile('${m._id}')"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-family:'Bebas Neue';font-size:17px">${m.name}</div>${gradeBadge(g)}<div style="font-size:11px;color:var(--muted);margin-top:4px">${m.tel?`📞 ${m.tel} `:''} ${m.discord?`💬 ${m.discord}`:''}</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="lbadge ${atmU>=LIM.atm?'lfull':'lok'}">🏧 ${atmU}/${LIM.atm}</span><span class="lbadge ${cambU>=LIM.cambriolage?'lfull':'lok'}">🏠 ${cambU}/${LIM.cambriolage}</span><span class="lbadge ${contU>=LIM.conteneur?'lfull':'lok'}">📦 ${contU}/${LIM.conteneur}</span></div>${m.notes?`<div style="font-size:11px;color:var(--muted)">📝 ${m.notes}</div>`:''}</div>${isAdmin()?`<button class="btn btn-red sm" style="padding:3px 6px" onclick="delMembre('${m._id}')">✕</button>`:''}</div></div>`;}).join('');
+  const _q=(document.getElementById('membreSearch')?.value||'').toLowerCase();
+  let _list=S.membres;
+  if(_q)_list=S.membres.filter(m=>{const g=getGrade(m.gradeId);return (m.name+' '+(g?g.name:'')+' '+(m.discord||'')).toLowerCase().includes(_q);});
+  gr.innerHTML=_list.length===0?'<div class="es">Aucun membre trouvé</div>':_list.map(m=>{const g=getGrade(m.gradeId);const atmU=(S.daily.atmHist||[]).filter(a=>a.membreId===m._id).length;const cambU=(S.daily.cambByMembre&&S.daily.cambByMembre[m._id])||0;const contU=(S.daily.contByMembre&&S.daily.contByMembre[m._id])||0;return`<div class="card mcard" onclick="if(!event.target.closest('button'))openMemberProfile('${m._id}')"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-family:'Bebas Neue';font-size:17px">${m.name}</div>${gradeBadge(g)}<div style="font-size:11px;color:var(--muted);margin-top:4px">${m.tel?`📞 ${m.tel} `:''} ${m.discord?`💬 ${m.discord}`:''}</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="lbadge ${atmU>=LIM.atm?'lfull':'lok'}">🏧 ${atmU}/${LIM.atm}</span><span class="lbadge ${cambU>=LIM.cambriolage?'lfull':'lok'}">🏠 ${cambU}/${LIM.cambriolage}</span><span class="lbadge ${contU>=LIM.conteneur?'lfull':'lok'}">📦 ${contU}/${LIM.conteneur}</span></div>${m.notes?`<div style="font-size:11px;color:var(--muted)">📝 ${m.notes}</div>`:''}</div>${isAdmin()?`<button class="btn btn-red sm" style="padding:3px 6px" onclick="delMembre('${m._id}')">✕</button>`:''}</div></div>`;}).join('');
   const ac=document.getElementById('addMembreCard');if(ac)ac.style.display=isAdmin()?'':'none';
 }
 function renderLimits(){
@@ -2143,7 +2151,7 @@ function toggleArchives(){
 function renderArchives(){
   const el=document.getElementById('cmdArchives');if(!el)return;
   const cs={attente:'bgray',prete:'bteal',livree:'bblue',payee:'bgreen',terminee:'bgreen',annulee:'bred'};
-  const arch=S.commandes.filter(c=>c.archived).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const arch=S.commandes.filter(c=>isArchived(c)).sort((a,b)=>(b.ts||0)-(a.ts||0));
   el.innerHTML=arch.length===0?'<div class="es">Aucune commande archivée</div>':arch.map(c=>'<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>'+c.clientNom+'</strong> — <span style="color:var(--gold)">'+fmt(c.total)+'</span></div><div style="display:flex;gap:4px;align-items:center"><span class="badge '+(cs[c.statut]||'b-gray')+'">'+c.statut+'</span>'+(isAdmin()?'<button class="btn btn-ghost btn-xs" onclick="unarchiveCmd(\''+c._id+'\')">↩</button><button class="btn btn-red btn-xs" onclick="delCommande(\''+c._id+'\')">✕</button>':'')+'</div></div><div style="font-size:10px;color:var(--muted2);margin-top:3px">'+(c.lines||[]).map(l=>l.qte+'× '+l.nom).join(', ')+' · archivée '+(c.archivedAt||c.date)+'</div></div>').join('');
 }
 async function unarchiveCmd(id){if(!isAdmin())return notify('Admin uniquement','err');await fbUpd('commandes',id,{archived:false,statut:'attente'});notify('Commande désarchivée','ok');renderArchives();}
@@ -2153,7 +2161,7 @@ function renderCommandes(){
   const stats=document.getElementById('cmdStats');
   if(stats){const tv=S.commandes.reduce((s,c)=>s+(c.total||0),0);stats.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tv)}</div><div class="stat-label">CA Commandes</div></div><div class="stat blue"><div class="stat-val">${S.commandes.length}</div><div class="stat-label">Commandes</div></div><div class="stat green"><div class="stat-val">${S.commandes.filter(c=>c.statut==='livree').length}</div><div class="stat-label">Livrées</div></div><div class="stat teal"><div class="stat-val">${S.clients.length}</div><div class="stat-label">Clients</div></div>`;}
   const _av=document.getElementById('cmdArchives');if(_av&&_av.style.display!=='none')renderArchives();
-  const cr=document.getElementById('cmdRecentes');if(cr){const sorted=[...S.commandes].sort((a,b)=>(b.ts||0)-(a.ts||0));cr.innerHTML=sorted.length===0?'<div class="es">Aucune commande</div>':sorted.slice(0,15).map(c=>`<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between;align-items:start"><div><strong>${c.clientNom}</strong> — <span style="font-family:'Share Tech Mono';color:var(--gold)">${fmt(c.total)}</span></div><div style="display:flex;gap:3px;align-items:center"><span class="badge ${cs[c.statut]||'b-gray'}">${c.statut}</span><select style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:10px;padding:2px;border-radius:3px" onchange="updCommande('${c._id}',this.value)"><option value="attente" ${c.statut==='attente'?'selected':''}>⏳ Attente</option><option value="prete" ${c.statut==='prete'?'selected':''}>✅ Prête</option><option value="livree" ${c.statut==='livree'?'selected':''}>📦 Livrée</option><option value="payee" ${c.statut==='payee'?'selected':''}>💰 Payée</option><option value="terminee" ${c.statut==='terminee'?'selected':''}>🏁 Terminée</option><option value="annulee" ${c.statut==='annulee'?'selected':''}>❌ Annulée</option></select>${isAdmin()?`<button class="btn btn-red sm" style="padding:2px 5px" onclick="delCommande('${c._id}')">✕</button>`:''}</div></div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(c.lines||[]).map(l=>`${l.qte}× ${l.nom}`).join(', ')}</div><div style="font-size:10px;color:var(--muted)">${c.date}</div></div>`).join('');}
+  const cr=document.getElementById('cmdRecentes');if(cr){const sorted=[...S.commandes].filter(c=>!isArchived(c)).sort((a,b)=>(b.ts||0)-(a.ts||0));cr.innerHTML=sorted.length===0?'<div class="es">Aucune commande</div>':sorted.slice(0,15).map(c=>`<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between;align-items:start"><div><strong>${c.clientNom}</strong> — <span style="font-family:'Share Tech Mono';color:var(--gold)">${fmt(c.total)}</span></div><div style="display:flex;gap:3px;align-items:center"><span class="badge ${cs[c.statut]||'b-gray'}">${c.statut}</span><select style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:10px;padding:2px;border-radius:3px" onchange="updCommande('${c._id}',this.value)"><option value="attente" ${c.statut==='attente'?'selected':''}>⏳ Attente</option><option value="prete" ${c.statut==='prete'?'selected':''}>✅ Prête</option><option value="livree" ${c.statut==='livree'?'selected':''}>📦 Livrée</option><option value="payee" ${c.statut==='payee'?'selected':''}>💰 Payée</option><option value="terminee" ${c.statut==='terminee'?'selected':''}>🏁 Terminée</option><option value="annulee" ${c.statut==='annulee'?'selected':''}>❌ Annulée</option></select>${isAdmin()?`<button class="btn btn-red sm" style="padding:2px 5px" onclick="delCommande('${c._id}')">✕</button>`:''}</div></div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(c.lines||[]).map(l=>`${l.qte}× ${l.nom}`).join(', ')}</div><div style="font-size:10px;color:var(--muted)">${c.date}</div></div>`).join('');}
   const cl=document.getElementById('clientsList');if(cl)cl.innerHTML=S.clients.length===0?'<div class="es">Aucun client</div>':S.clients.map(c=>`<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><div><strong>${c.nom}</strong> <span class="badge ${c.type==='exterieur'?'b-teal':'b-purple'}" style="font-size:9px">${c.type}</span>${c.discord?`<span style="font-size:11px;color:var(--muted);margin-left:5px">💬 ${c.discord}</span>`:''}</div><span style="font-size:11px;color:var(--gold)">${S.commandes.filter(x=>x.clientId===c._id).length} cmds</span></div>${c.tel?`<div style="font-size:11px;color:var(--muted)">📞 ${c.tel}</div>`:''}</div>`).join('');
 }
 function renderCmdHistClient(){
@@ -2216,7 +2224,7 @@ function openMaCommande(){
 }
 
 function addMaCmdLine(){
-  const items=S.items.filter(i=>i.type==='commande'||i.type==='tous'||i.type==='drogue');
+  const items=S.items.filter(i=>i.type==='commande'||i.type==='tous'||i.type==='drogue'||i.type==='arme');
   const opts=items.map(it=>'<option value="'+it._id+'" data-prix="'+it.prix+'">'+it.nom+' — '+fmt(it.prix)+'</option>').join('');
   const cont=document.getElementById('maCmdLinesDiv');if(!cont)return;
   const id=++_maCmdCount;
