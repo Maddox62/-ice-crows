@@ -490,6 +490,26 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .bday-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
 .bday-today{background:rgba(255,106,26,.06);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,106,26,.2);margin-bottom:4px;}
 
+
+/* ── SESSION LIVE ── */
+.session-live{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(22,199,154,.1),rgba(255,106,26,.05));border:1px solid rgba(22,199,154,.3);border-radius:var(--r-lg);padding:14px 18px;}
+.session-pulse{width:12px;height:12px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px var(--teal);animation:livePulse 1.5s infinite;flex-shrink:0;}
+/* ── FILE D'ATTENTE ── */
+.queue-item{display:flex;align-items:center;gap:14px;padding:13px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;transition:border-color .15s;}
+.queue-item:hover{border-color:var(--border2);}
+.queue-urgent{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.05);}
+
+
+/* ── PLANIFICATEUR ── */
+.plan-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;}
+.plan-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;}
+.plan-name{font-family:'Oswald';font-size:15px;font-weight:600;}
+.plan-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.plan-roles{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.plan-role{display:flex;flex-direction:column;gap:4px;}
+.plan-role-label{font-size:11px;font-weight:600;color:var(--muted2);}
+@media(max-width:880px){.plan-roles{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -533,7 +553,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0531-1414</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0531-1422</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -609,6 +629,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 
 <!-- ═══ DASHBOARD ═══ -->
 <div class="page active" id="page-dashboard">
+  <div id="sessionWidget" style="margin-bottom:16px"></div>
   <div id="objDisplay" style="margin-bottom:14px"></div>
   <div id="insights" style="margin-bottom:16px"></div>
   <div id="forecast" style="margin-bottom:16px"></div>
@@ -950,7 +971,12 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div id="cmdAdminZone">
   <div class="stats-row" id="cmdStats"></div>
   <div class="g2" style="margin-bottom:14px">
-    <div class="card">
+    <div class="card" style="margin-bottom:16px">
+    <div class="card-title">📋 File d'attente des commandes</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Les commandes à traiter, triées par priorité. Avance-les d'un clic.</p>
+    <div id="cmdQueue"></div>
+  </div>
+  <div class="card">
       <div class="card-title">🛒 Nouvelle Commande</div>
       <div class="form-group"><label class="form-label">Client</label>
         <div style="display:flex;gap:6px">
@@ -1161,6 +1187,17 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 
 <!-- ═══ MISSIONS ═══ -->
 <div class="page" id="page-missions">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">🎯 Planificateur de braquage</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Prépare le coup : cible, heure, et assigne les rôles à chaque membre.</p>
+    <div class="form-row3">
+      <div class="form-group"><label class="form-label">Nom du plan</label><input id="planName" placeholder="Casse Fleeca centre-ville"></div>
+      <div class="form-group"><label class="form-label">Cible / lieu</label><input id="planCible" placeholder="Banque Fleeca"></div>
+      <div class="form-group"><label class="form-label">Heure prévue</label><input id="planHeure" placeholder="21h30"></div>
+    </div>
+    <button class="btn btn-blue" onclick="createPlan()">🎯 Créer le plan</button>
+  </div>
+  <div id="plansList" style="margin-bottom:16px"></div>
   <div class="g2" style="margin-bottom:14px">
     <div class="g2" style="margin-bottom:16px">
     <div class="card">
@@ -1219,6 +1256,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     </div>
     <button class="btn btn-blue" onclick="saveIdentity()">💾 Appliquer l'identité</button>
   </div>
+  <div class="card" style="margin-bottom:16px"><div class="card-title">🔔 Notifications navigateur</div><p style="font-size:11px;color:var(--muted);margin-bottom:12px">Reçois une alerte quand tu es mentionné ou lors d'événements importants, même si l'onglet n'est pas actif.</p><button class="btn btn-blue" onclick="askNotifPermission()">🔔 Activer les notifications</button></div>
   <div class="card">
       <div class="card-title">🎖 Grades — Ordre & Attributs</div>
       <p style="color:var(--muted);font-size:11px;margin-bottom:10px">Glissez pour réordonner. Cliquez ✏ pour modifier.</p>
@@ -1474,7 +1512,7 @@ document.addEventListener('firebase-ready',async()=>{
 });
 
 async function loadAll(){
-  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls',checklists:'checklists',albums:'albums'};S.objective=null;
+  const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls',checklists:'checklists',albums:'albums',plans:'plans'};S.objective=null;
   for(const[col,key]of Object.entries(cols)){try{const snap=await FB.getDocs(FB.collection(db,col));S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));}catch(e){}}
   S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));
   try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);}}catch(e){}
@@ -1497,6 +1535,7 @@ function setupListeners(){
   FB.onSnapshot(FB.doc(db,'config','daily'),snap=>{if(snap.exists()){Object.assign(S.daily,snap.data());renderLimits();}});
   FB.onSnapshot(FB.doc(db,'config','weekly'),snap=>{if(snap.exists()){Object.assign(S.weekly,snap.data());renderLimits();}});
   setupActivityListener();
+  FB.onSnapshot(FB.collection(db,'plans'),snap=>{S.plans=[];snap.forEach(d=>S.plans.push({...d.data(),_id:d.id}));renderPlans();});
   FB.onSnapshot(FB.collection(db,'albums'),snap=>{S.albums=[];snap.forEach(d=>S.albums.push({...d.data(),_id:d.id}));renderAlbums();});
   FB.onSnapshot(FB.collection(db,'checklists'),snap=>{S.checklists=[];snap.forEach(d=>S.checklists.push({...d.data(),_id:d.id}));renderChecklists();});
   FB.onSnapshot(FB.collection(db,'feed'),snap=>{S.feed=[];snap.forEach(d=>S.feed.push({...d.data(),_id:d.id}));renderFeed();});
@@ -1556,6 +1595,231 @@ function setUser(m){setTimeout(applyUserBadge,50);
 
 
 
+
+
+
+// ════════════════════════════════════════════
+//  NOTIFICATIONS NAVIGATEUR + PLANIFICATEUR DE BRAQUAGE
+// ════════════════════════════════════════════
+
+// ── NOTIFICATIONS NAVIGATEUR (push) ──
+function askNotifPermission(){
+  if(!('Notification' in window))return notify('Ton navigateur ne supporte pas les notifications','err');
+  Notification.requestPermission().then(function(perm){
+    if(perm==='granted'){notify('🔔 Notifications activées','ok');try{localStorage.setItem('icecrows_notif','1');}catch(e){}new Notification('ICE CROWS MC',{body:'Notifications activées ! Tu seras prévenu des événements importants.'});}
+    else notify('Notifications refusées','err');
+  });
+}
+function notifEnabled(){
+  try{return ('Notification' in window)&&Notification.permission==='granted'&&localStorage.getItem('icecrows_notif')==='1';}catch(e){return false;}
+}
+function pushNotif(title,body,icon){
+  if(!notifEnabled())return;
+  // Ne pas notifier si l'onglet est actif (sauf mentions)
+  try{
+    var n=new Notification(title,{body:body,icon:icon||undefined,silent:false});
+    setTimeout(function(){n.close();},6000);
+    n.onclick=function(){window.focus();n.close();};
+  }catch(e){}
+}
+// Surveille les nouveaux éléments pour notifier
+var _notifSeen={feed:0,annonces:0,polls:0};
+function checkNotifTriggers(){
+  if(!notifEnabled()||!currentUser)return;
+  // Mentions dans le feed récent
+  (S.feed||[]).forEach(function(f){
+    if((f.ts||0)>_notifSeen.feed&&f.who!==currentUser.name){
+      var me=S.membres.find(function(x){return x._id===currentUser._id;});
+      if(me&&new RegExp('@'+me.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(f.msg||'')){
+        pushNotif('💬 Tu as été mentionné',f.who+' : '+f.msg.replace(/<[^>]+>/g,''));
+      }
+    }
+  });
+  var maxFeed=Math.max.apply(null,[0].concat((S.feed||[]).map(function(f){return f.ts||0;})));
+  _notifSeen.feed=maxFeed;
+}
+
+// ── PLANIFICATEUR DE BRAQUAGE ──
+var BRAQ_ROLES=['🎯 Leader','🔫 Assaut','🚗 Chauffeur','👁️ Guet','💻 Hack','🛡️ Backup'];
+async function createPlan(){
+  if(!currentUser)return notify('Connectez-vous','err');
+  var name=document.getElementById('planName').value.trim();
+  var cible=document.getElementById('planCible').value.trim();
+  var heure=document.getElementById('planHeure').value.trim();
+  if(!name)return notify('Nom du plan requis','err');
+  await fbAdd('plans',{name:name,cible:cible,heure:heure,roles:{},statut:'prepa',auteur:currentUser.name,date:nowStr(),ts:Date.now()});
+  document.getElementById('planName').value='';document.getElementById('planCible').value='';document.getElementById('planHeure').value='';
+  notify('🎯 Plan créé','ok');
+}
+async function assignRole(planId,role,memberId){
+  var p=S.plans.find(function(x){return x._id===planId;});if(!p)return;
+  var roles=p.roles||{};
+  if(memberId)roles[role]=memberId;else delete roles[role];
+  await fbUpd('plans',planId,{roles:roles});
+  // notifier le membre assigné
+  if(memberId){var m=getMembre(memberId);if(m)pushFeed('a assigné '+m.name+' comme '+role+' sur "'+p.name+'"','🎯');}
+}
+async function setPlanStatus(planId,statut){var p=S.plans.find(function(x){return x._id===planId;});if(!p)return;await fbUpd('plans',planId,{statut:statut});if(statut==='lance')pushFeed('a lancé le plan "'+p.name+'" !','🚨');}
+async function delPlan(planId){if(!confirm('Supprimer ce plan ?'))return;await fbDel('plans',planId);}
+function renderPlans(){
+  var el=document.getElementById('plansList');if(!el)return;
+  var list=[].concat(S.plans||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  if(!list.length){el.innerHTML='<div class="es">Aucun plan. Prépare ton prochain coup en assignant les rôles.</div>';return;}
+  var stLabels={prepa:'📋 En préparation',pret:'✅ Prêt',lance:'🚨 Lancé',fini:'🏁 Terminé'};
+  el.innerHTML=list.map(function(p){
+    var roles=p.roles||{};
+    var assigned=Object.keys(roles).length;
+    var h='<div class="plan-card"><div class="plan-head"><div><div class="plan-name">🎯 '+p.name+'</div><div class="plan-meta">'+(p.cible?'📍 '+p.cible:'')+(p.heure?' · 🕐 '+p.heure:'')+'</div></div>'
+      +'<span class="badge '+(p.statut==='lance'?'bred':p.statut==='pret'?'bgreen':p.statut==='fini'?'bgray':'borange')+'">'+(stLabels[p.statut]||p.statut)+'</span></div>';
+    h+='<div class="plan-roles">';
+    BRAQ_ROLES.forEach(function(role){
+      var mid=roles[role];var m=mid?getMembre(mid):null;
+      h+='<div class="plan-role"><span class="plan-role-label">'+role+'</span>'
+        +'<select onchange="assignRole(\''+p._id+'\',\''+role+'\',this.value)" style="font-size:11px;padding:4px 6px"><option value="">— Personne —</option>'
+        +S.membres.map(function(mb){return '<option value="'+mb._id+'"'+(mid===mb._id?' selected':'')+'>'+mb.name+'</option>';}).join('')
+        +'</select></div>';
+    });
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">';
+    if(p.statut==='prepa')h+='<button class="btn btn-teal btn-xs" onclick="setPlanStatus(\''+p._id+'\',\'pret\')">✅ Marquer prêt</button>';
+    if(p.statut==='pret')h+='<button class="btn btn-red btn-xs" onclick="setPlanStatus(\''+p._id+'\',\'lance\')">🚨 Lancer</button>';
+    if(p.statut==='lance')h+='<button class="btn btn-ghost btn-xs" onclick="setPlanStatus(\''+p._id+'\',\'fini\')">🏁 Terminer</button>';
+    h+='<button class="btn btn-red btn-xs" onclick="delPlan(\''+p._id+'\')">✕</button>';
+    h+='</div><div style="font-size:10px;color:var(--muted);margin-top:8px">'+assigned+' rôle(s) assigné(s) · par '+p.auteur+'</div></div>';
+    return h;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+//  FICHE DE PAIE + FILE D'ATTENTE COMMANDES + COMPTEUR SESSION
+// ════════════════════════════════════════════
+
+// ── FICHE DE PAIE (historique des parts touchées) ──
+function getMemberPayslip(memberId,period){
+  var now=Date.now();var start=0;
+  if(period==='week')start=now-7*864e5;
+  else if(period==='month')start=now-30*864e5;
+  else if(period==='today'){var t=new Date();t.setHours(0,0,0,0);start=t.getTime();}
+  var lines=[];
+  S.ops.forEach(function(o){
+    if((o.ts||0)<start)return;
+    (o.shares||[]).forEach(function(sh){
+      if(sh.membreId===memberId){
+        lines.push({date:o.date,ts:o.ts,type:o.typeLabel||o.type||'Op',montant:sh.amount||0,pending:!!o.mcPending});
+      }
+    });
+  });
+  lines.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  var total=lines.reduce(function(s,l){return s+l.montant;},0);
+  return {lines:lines,total:total};
+}
+function renderPayslip(memberId,period){
+  period=period||'week';
+  var ps=getMemberPayslip(memberId,period);
+  var m=getMembre(memberId);
+  var h='<div style="display:flex;gap:6px;margin-bottom:12px">'
+    +['today','week','month','all'].map(function(p){var lbl={today:'Aujourd\u2019hui',week:'7 jours',month:'30 jours',all:'Tout'}[p];return '<button class="btn '+(p===period?'btn-blue':'btn-ghost')+' btn-xs" onclick="renderPayslipInto(\''+memberId+'\',\''+p+'\')">'+lbl+'</button>';}).join('')+'</div>';
+  h+='<div class="stat gold" style="margin-bottom:12px"><div class="stat-val">'+fmt(ps.total)+'</div><div class="stat-label">Total perçu ('+ps.lines.length+' parts)</div></div>';
+  if(!ps.lines.length){h+='<div class="es">Aucune part sur cette période</div>';return h;}
+  h+='<div class="scr" style="max-height:300px"><table class="tbl"><thead><tr><th>Date</th><th>Type</th><th style="text-align:right">Part</th></tr></thead><tbody>';
+  ps.lines.forEach(function(l){
+    h+='<tr><td style="font-size:11px;color:var(--muted)">'+l.date+'</td><td>'+l.type+(l.pending?' <span class="badge bgray" style="font-size:7px">EN ATTENTE</span>':'')+'</td><td style="text-align:right;color:var(--teal);font-weight:600">'+fmt(l.montant)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+function openPayslip(memberId){
+  var m=getMembre(memberId);if(!m)return;
+  var modal=document.getElementById('payslipModal');if(modal)modal.remove();
+  modal=document.createElement('div');modal.id='payslipModal';modal.className='modal show';
+  modal.innerHTML='<div class="mbox" style="max-width:520px;max-height:88vh;overflow-y:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="text-align:left;font-size:19px">💵 Fiche de paie — '+m.name+'</h2><button onclick="document.getElementById(\'payslipModal\').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">✕</button></div>'
+    +'<div id="payslipContent"></div></div>';
+  document.body.appendChild(modal);
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  renderPayslipInto(memberId,'week');
+}
+
+function renderPayslipInto(memberId,period){
+  var el=document.getElementById('payslipContent');
+  if(el)el.innerHTML=renderPayslip(memberId,period);
+}
+
+// ── FILE D'ATTENTE DES COMMANDES À TRAITER ──
+function renderCmdQueue(){
+  var el=document.getElementById('cmdQueue');if(!el)return;
+  // Commandes non terminées, triées par priorité de statut (attente > prete > livree > payee)
+  var order={attente:0,prete:1,livree:2,payee:3};
+  var queue=S.commandes.filter(function(c){return c.statut!=='terminee'&&c.statut!=='annulee';})
+    .sort(function(a,b){
+      var oa=order[a.statut]!==undefined?order[a.statut]:9;
+      var ob=order[b.statut]!==undefined?order[b.statut]:9;
+      if(oa!==ob)return oa-ob;
+      return (a.ts||0)-(b.ts||0); // plus ancien d'abord
+    });
+  if(!queue.length){el.innerHTML='<div class="es">✅ Aucune commande en attente de traitement</div>';return;}
+  var stLabels={attente:'⏳ À préparer',prete:'✅ Prête à livrer',livree:'📦 Livrée, à encaisser',payee:'💰 Payée, à clôturer'};
+  var stColors={attente:'cs-attente',prete:'cs-prete',livree:'cs-livree',payee:'cs-payee'};
+  el.innerHTML=queue.map(function(c){
+    var clName=c.clientNom||(getClient(c.clientId)||{}).nom||'Client ?';
+    var nextActions={attente:['prete','✅ Marquer prête'],prete:['livree','📦 Marquer livrée'],livree:['payee','💰 Marquer payée'],payee:['terminee','🏁 Clôturer']};
+    var na=nextActions[c.statut];
+    var age=c.ts?Math.floor((Date.now()-c.ts)/864e5):0;
+    var urgent=c.statut==='attente'&&age>=2;
+    return '<div class="queue-item'+(urgent?' queue-urgent':'')+'">'
+      +'<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span class="cs '+(stColors[c.statut]||'')+'">'+(stLabels[c.statut]||c.statut)+'</span>'+(urgent?'<span class="badge bred" style="font-size:8px">⚠️ '+age+'j</span>':'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;margin-top:5px">'+clName+' — '+fmt(c.total||0)+'</div>'
+      +'<div style="font-size:11px;color:var(--muted)">'+((c.lines||[]).map(function(i){return i.qte+'× '+(i.nom||i.itemNom||'');}).join(', ')||c.contenu||'')+' · '+(c.date||'')+'</div></div>'
+      +(na&&canDo('validate_commande')?'<button class="btn btn-teal btn-sm" onclick="updCommande(\''+c._id+'\',\''+na[0]+'\')">'+na[1]+'</button>':'')
+      +'</div>';
+  }).join('');
+}
+
+// ── COMPTEUR LIVE DE LA SESSION EN COURS ──
+var sessionStart=null;
+function startSession(){
+  sessionStart=Date.now();
+  try{localStorage.setItem('icecrows_session',sessionStart);}catch(e){}
+  renderSessionWidget();
+  notify('▶️ Session démarrée','ok');
+}
+function endSession(){
+  if(!sessionStart)return;
+  var dur=Date.now()-sessionStart;
+  var ops=S.ops.filter(function(o){return (o.ts||0)>=sessionStart;});
+  var total=ops.reduce(function(s,o){return s+(o.montant||0);},0);
+  sessionStart=null;
+  try{localStorage.removeItem('icecrows_session');}catch(e){}
+  renderSessionWidget();
+  notify('⏹️ Session terminée : '+fmt(total)+' en '+fmtDuration(dur)+' ('+ops.length+' ops)','ok','Bilan de session');
+}
+function fmtDuration(ms){
+  var s=Math.floor(ms/1000);var h=Math.floor(s/3600);var m=Math.floor((s%3600)/60);
+  return (h>0?h+'h':'')+m+'min';
+}
+function renderSessionWidget(){
+  var el=document.getElementById('sessionWidget');if(!el)return;
+  try{var saved=localStorage.getItem('icecrows_session');if(saved&&!sessionStart)sessionStart=+saved;}catch(e){}
+  if(!sessionStart){
+    el.innerHTML='<button class="btn btn-teal btn-sm" onclick="startSession()">▶️ Démarrer une session</button>';
+    return;
+  }
+  var dur=Date.now()-sessionStart;
+  var ops=S.ops.filter(function(o){return (o.ts||0)>=sessionStart;});
+  var total=ops.reduce(function(s,o){return s+(o.montant||0);},0);
+  el.innerHTML='<div class="session-live">'
+    +'<div class="session-pulse"></div>'
+    +'<div style="flex:1"><div style="font-size:11px;color:var(--teal);font-weight:600;letter-spacing:1px">● SESSION EN COURS</div>'
+    +'<div style="font-size:13px;margin-top:3px"><span class="mono" id="sessionTimer">'+fmtDuration(dur)+'</span> · <strong style="color:var(--gold)">'+fmt(total)+'</strong> · '+ops.length+' ops</div></div>'
+    +'<button class="btn btn-red btn-sm" onclick="endSession()">⏹️ Terminer</button></div>';
+}
+setInterval(function(){
+  if(sessionStart){
+    var t=document.getElementById('sessionTimer');
+    if(t)t.textContent=fmtDuration(Date.now()-sessionStart);
+  }
+},10000);
 
 // ════════════════════════════════════════════
 //  RÉACTIONS EMOJI + MENTIONS + TROMBINOSCOPE + ANNIVERSAIRES
@@ -2877,6 +3141,7 @@ function openMemberProfile(id){
     h+='</div>';
   }
   h+='</div>';
+  h+='<div style="padding:0 20px 20px"><button class="btn btn-gold btn-sm" style="width:100%" onclick="openPayslip(\''+id+'\')">💵 Voir la fiche de paie</button></div>';
   box.innerHTML=h;
   modal.appendChild(box);
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
@@ -3387,7 +3652,8 @@ function goTab(name){
   if(name==='social'){renderFeed();renderPolls();renderBirthdays();if(document.getElementById('pollOptions')&&!document.querySelectorAll('.poll-opt-input').length){addPollOption();addPollOption();}}
   if(name==='membres'){renderOrgChart();renderTrombi();}
   if(name==='galerie')renderAlbums();
-  if(name==='commandes')markCmdSeen();
+  if(name==='missions')renderPlans();
+  if(name==='commandes'){markCmdSeen();renderCmdQueue();}
   document.querySelectorAll('.navcat.open').forEach(c=>c.classList.remove('open'));var _ai=document.querySelector(`.navitem[data-tab="${name}"]`);if(_ai){_ai.classList.add('active');var _cat=_ai.closest('.navcat');if(_cat)_cat.classList.add('active');}var _at=document.querySelector(`.ntab[data-tab="${name}"]`);if(_at)_at.classList.add('active');
   const sub=document.getElementById('sub-braquages');
   if(name==='braquages'){sub.classList.add('show');goSub(currentSub);adjustBraqLayouts();}else sub.classList.remove('show');
@@ -3448,7 +3714,7 @@ function renderAll(){
   renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
   renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
   renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();renderActionPerms();renderAlbums();renderTrombi();renderBirthdays();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
+  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();renderActionPerms();renderAlbums();renderTrombi();renderBirthdays();renderCmdQueue();renderSessionWidget();renderPlans();checkNotifTriggers();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
   refreshSelects();
   if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
   if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
