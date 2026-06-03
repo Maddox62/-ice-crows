@@ -588,7 +588,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2034</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2038</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1449,12 +1449,11 @@ function renderBraqInfo(type){
     +'<div class="stat purple" style="padding:13px"><div class="stat-val" style="font-size:19px">'+allOps.length+'</div><div class="stat-label">Ops totales</div></div>'
     +'</div></div>';
 
-  if(type==='cambriolage'||type==='conteneur'){
-    var byM=type==='cambriolage'?(S.daily.cambByMembre||{}):(S.daily.contByMembre||{});
-    var lim=LIM[type]||6;
+  if(type==='cambriolage'||type==='conteneur'||type==='gofast'){
+    var lim=LIM[type]||(type==='gofast'?1:6);
     var rows='';
     S.membres.forEach(function(m){
-      var used=byM[m._id]||0;
+      var used=countActiveCooldownByMember(type,m._id,24*3600e3);
       var pct=Math.min(used/lim*100,100);
       var col=used>=lim?'pred':(used>=lim*0.7?'pgold':'pteal');
       rows+='<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>'+m.name+'</span><span class="mono" style="color:var(--muted2)">'+used+'/'+lim+'</span></div><div class="pbar"><div class="pfill '+col+'" style="width:'+pct+'%"></div></div></div>';
@@ -1585,7 +1584,7 @@ function getVisibleCommandes(){
 
 
 // ═══ STATE ═══
-let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1,train:1,fleeca:1};
+let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1,train:1,fleeca:1,gofast:1};
 
 // ════════════════════════════════════════════
 //  COOLDOWN AUTOMATIQUE PAR COUP (basé sur l'historique réel)
@@ -3615,7 +3614,7 @@ async function submitItemBraq(type){
   if(!canAccessTab('braquages'))return notify('Accès refusé','err');
   const cfgs={cambriolage:{listId:'cambItemsList',partId:'cambPart',totalId:'cambTotal',detailId:'cambDetail',notesId:'cambNotes',resultId:'cambResult',rcId:'cambRC'},bijouterie:{listId:'bijItemsList',partId:'bijPart',totalId:'bijTotal',detailId:'bijDetail',notesId:'bijNotes',resultId:'bijResult',rcId:'bijRC'},humanlab:{listId:'hlItemsList',partId:'hlPart',totalId:'hlTotal',detailId:'hlDetail',notesId:'hlNotes',resultId:'hlResult',rcId:'hlRC'}};
   const c=cfgs[type];
-  if(type==='cambriolage'){if(!currentUser)return notify('Connectez-vous','err');const mid=currentUser._id;const used=(S.daily.cambByMembre&&S.daily.cambByMembre[mid])||0;if(used>=LIM.cambriolage)return notify(`Limite ${LIM.cambriolage} cambriolages/membre/jour atteinte`,'err');}
+  if(type==='cambriolage'){if(!currentUser)return notify('Connectez-vous','err');const mid=currentUser._id;const used=countActiveCooldownByMember('cambriolage',mid,24*3600e3);if(used>=LIM.cambriolage)return notify('Limite cambriolage atteinte pour toi — recharge 24h après chaque coup','err');}
   if(type==='bijouterie'&&slotsLeft('bijouterie')<=0){var _cb=cooldownText('bijouterie');return notify('Limite bijouterie atteinte'+(_cb?' — '+_cb:''),'err');}
   if(type==='humanlab'&&slotsLeft('humanlab')<=0){var _ch=cooldownText('humanlab');return notify('Limite HumanLab atteinte'+(_ch?' — '+_ch:''),'err');}
   const items=getItemsForSelector(c.listId);if(!items.length)return notify('Sélectionnez au moins un item','err');
@@ -3653,6 +3652,7 @@ async function submitArgent(type){
   const montant=+document.getElementById(mIds[type]).value;
   if(!montant||montant<=0)return notify('Montant invalide','err');
   const pids=getChecked(pIds[type]);if(!pids.length)return notify('Sélectionnez des participants','err');
+  if(type==='gofast'){var _blocked=pids.filter(function(p){return countActiveCooldownByMember('gofast',p,24*3600e3)>=1;});if(_blocked.length){var _names=_blocked.map(function(p){var mm=getMembre(p);return mm?mm.name:'?';}).join(', ');return notify('GoFast en cooldown (24h) pour : '+_names,'err');}}
   const notes=document.getElementById(type+'Notes')?.value||'';
   const res=distribute(montant,pids);
   await fbAdd('ops',{type,typeLabel:labels[type],montant,contenu:fmt(montant),notes,mc:res.mc,toShare:res.toShare,shares:res.shares,date:nowStr(),ts:Date.now()});
@@ -3676,7 +3676,7 @@ function toggleContType(){const t=document.getElementById('contType').value;docu
 async function submitConteneur(){
   if(!canAccessTab('braquages'))return notify('Accès refusé','err');
   if(!currentUser)return notify('Connectez-vous','err');const mid=currentUser._id;
-  const used=(S.daily.contByMembre&&S.daily.contByMembre[mid])||0;if(used>=LIM.conteneur)return notify(`Limite ${LIM.conteneur} conteneurs/membre/jour atteinte`,'err');
+  const used=countActiveCooldownByMember('conteneur',mid,24*3600e3);if(used>=LIM.conteneur)return notify('Limite conteneur atteinte pour toi — recharge 24h après chaque coup','err');
   const type=document.getElementById('contType').value;let montant=0,contenu='';
   if(type==='argent'){
     montant=+document.getElementById('contMontant').value;if(!montant)return notify('Montant invalide','err');contenu=fmt(montant);
