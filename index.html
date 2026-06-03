@@ -588,7 +588,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0601-2020</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2026</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -660,6 +660,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <button class="stab" onclick="goSub('conteneur')">📦 Conteneur</button>
   <button class="stab" onclick="goSub('train')">🚂 Train</button>
   <button class="stab" onclick="goSub('fleeca')">🏦 Fleeca</button>
+  <button class="stab" onclick="goSub('gofast')">🚤 GoFast</button>
   <button class="stab" onclick="goSub('historique')">📋 Historique</button>
   <button class="stab" onclick="goSub('simulateur')">🧮 Simulateur</button>
 </div>
@@ -836,6 +837,12 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     <div class="braq-layout">
       <div class="card"><div class="card-title">🏦 Fleeca</div><div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="fleecaMontant" placeholder="150000" min="0"></div><div class="form-group"><label class="form-label">Participants</label><div class="pgrid" id="fleecaPart"></div></div><div class="form-group"><label class="form-label">Notes</label><input id="fleecaNotes" placeholder="Infos..."></div><button class="btn btn-blue" style="width:100%" onclick="submitArgent('fleeca')">⚡ ENREGISTRER</button></div>
       <div style="display:flex;flex-direction:column;gap:16px;min-width:0"><div id="braqInfo-fleeca"></div><div class="card" id="fleecaResult" style="display:none"><div class="card-title">📊 Résultat</div><div id="fleecaRC"></div></div></div>
+    </div>
+  </div>
+  <div class="subpage" id="sp-gofast">
+    <div class="braq-layout">
+      <div class="card"><div class="card-title">🚤 GoFast</div><div class="form-group"><label class="form-label">Montant ($)</label><input type="number" id="gofastMontant" placeholder="200000" min="0"></div><div class="form-group"><label class="form-label">Participants</label><div class="pgrid" id="gofastPart"></div></div><div class="form-group"><label class="form-label">Notes</label><input id="gofastNotes" placeholder="Infos..."></div><button class="btn btn-blue" style="width:100%" onclick="submitArgent('gofast')">⚡ ENREGISTRER</button></div>
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0"><div id="braqInfo-gofast"></div><div class="card" id="gofastResult" style="display:none"><div class="card-title">📊 Résultat</div><div id="gofastRC"></div></div></div>
     </div>
   </div>
   <div class="subpage" id="sp-historique">
@@ -1430,7 +1437,7 @@ function renderBraqInfo(type){
   var todayOps=allOps.filter(function(o){return (o.ts||0)>=tStart;});
   var totalAll=allOps.reduce(function(s,o){return s+(o.montant||0);},0);
   var totalToday=todayOps.reduce(function(s,o){return s+(o.montant||0);},0);
-  var labels={cambriolage:'Cambriolage',bijouterie:'Bijouterie',humanlab:'HumanLab',superette:'Superette',ammu:'Ammunation',conteneur:'Conteneur',train:'Train',fleeca:'Fleeca'};
+  var labels={cambriolage:'Cambriolage',bijouterie:'Bijouterie',humanlab:'HumanLab',superette:'Superette',ammu:'Ammunation',conteneur:'Conteneur',train:'Train',fleeca:'Fleeca',gofast:'GoFast'};
   var lab=labels[type]||type;
 
   var h='';
@@ -1467,7 +1474,7 @@ function renderBraqInfo(type){
   el.innerHTML=h;
 }
 function renderAllBraqInfo(){
-  ['cambriolage','bijouterie','humanlab','superette','ammu','conteneur','train','fleeca'].forEach(renderBraqInfo);
+  ['cambriolage','bijouterie','humanlab','superette','ammu','conteneur','train','fleeca','gofast'].forEach(renderBraqInfo);
 }
 
 function adjustBraqLayouts(){/* layout fixe 2 colonnes, le panneau infos remplit la droite */}
@@ -2893,7 +2900,7 @@ function openQuickEntry(){
     +'<p class="sub" style="text-align:left;margin-bottom:18px">Déclare une opération en quelques secondes</p>'
     +'<div class="form-group"><label class="form-label">Type d\u2019opération</label><select id="qkType" onchange="qkTypeChange()">'
       +'<optgroup label="💰 Cash (distribution immédiate)">'
-      +'<option value="superette">🏪 Superette</option><option value="ammu">🔧 Ammunation</option><option value="atm">🏧 ATM</option><option value="train">🚂 Train</option><option value="fleeca">🏦 Fleeca</option><option value="autre">⚡ Autre (cash)</option>'
+      +'<option value="superette">🏪 Superette</option><option value="ammu">🔧 Ammunation</option><option value="atm">🏧 ATM</option><option value="train">🚂 Train</option><option value="fleeca">🏦 Fleeca</option><option value="gofast">🚤 GoFast</option><option value="autre">⚡ Autre (cash)</option>'
       +'</optgroup>'
       +'<optgroup label="📦 Braquages à items (alimente le stock)">'
       +'<option value="cambriolage">🏠 Cambriolage</option><option value="bijouterie">💎 Bijouterie</option><option value="humanlab">🧪 HumanLab</option><option value="conteneur">📦 Conteneur</option>'
@@ -2948,7 +2955,7 @@ async function submitQuickEntry(){
   if(!pids.length)return notify('Sélectionnez au moins un participant','err');
   try{localStorage.setItem('icecrows_lastpart',JSON.stringify(pids));}catch(e){}
   var isItem=QK_ITEM_TYPES.indexOf(type)!==-1;
-  var labels={superette:'Superette',ammu:'Ammunation',atm:'ATM',train:'Train',fleeca:'Fleeca',autre:'Opération',cambriolage:'Cambriolage',bijouterie:'Bijouterie',humanlab:'HumanLab',conteneur:'Conteneur'};
+  var labels={superette:'Superette',ammu:'Ammunation',atm:'ATM',train:'Train',fleeca:'Fleeca',gofast:'GoFast',autre:'Opération',cambriolage:'Cambriolage',bijouterie:'Bijouterie',humanlab:'HumanLab',conteneur:'Conteneur'};
   var typeLabel=labels[type]||'Opération';
   if(isItem){
     var items=getItemsForSelector('qkItemsList');
@@ -3594,9 +3601,9 @@ async function submitArgent(type){
   if(!canAccessTab('braquages'))return notify('Accès refusé','err');
   if(type==='superette'&&(S.daily.superette||0)>=LIM.superette)return notify(`Limite ${LIM.superette} superettes/jour atteinte`,'err');
   if(type==='ammu'&&(S.daily.ammu||0)>=LIM.ammu)return notify(`Limite ${LIM.ammu} ammu/jour atteinte`,'err');
-  const mIds={superette:'supMontant',ammu:'ammuMontant',train:'trainMontant',fleeca:'fleecaMontant'};
-  const pIds={superette:'supPart',ammu:'ammuPart',train:'trainPart',fleeca:'fleecaPart'};
-  const labels={superette:'Superette',ammu:'Ammunation',train:'Train',fleeca:'Fleeca'};
+  const mIds={superette:'supMontant',ammu:'ammuMontant',train:'trainMontant',fleeca:'fleecaMontant',gofast:'gofastMontant'};
+  const pIds={superette:'supPart',ammu:'ammuPart',train:'trainPart',fleeca:'fleecaPart',gofast:'gofastPart'};
+  const labels={superette:'Superette',ammu:'Ammunation',train:'Train',fleeca:'Fleeca',gofast:'GoFast'};
   const montant=+document.getElementById(mIds[type]).value;
   if(!montant||montant<=0)return notify('Montant invalide','err');
   const pids=getChecked(pIds[type]);if(!pids.length)return notify('Sélectionnez des participants','err');
@@ -3919,7 +3926,7 @@ async function clearOps(){if(!isAdmin())return notify('Admin uniquement','err');
 function exportSal(){const totals=computeSal();const mc=S.ops.reduce((s,o)=>s+(o.mc||0),0);let txt='=== ICE CROWS MC — SALAIRES ===\n'+nowStr()+'\n\n';totals.forEach(t=>{const m=getMembre(t.id);const g=m?getGrade(m.gradeId):null;txt+=`${m?m.name:'?'} [${g?g.name:'?'}] : ${fmt(t.total)}\n`;});txt+=`\nCAISSE MC : ${fmt(mc)}`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='salaires_icecrows.txt';a.click();}
 // ═══ NAVIGATION ═══
 const TABS=['dashboard','membres','braquages','drogues','stock','ventestock','armurerie','commandes','banque','salaires','stats','agenda','garage','sanctions','missions','reglement','config','itemsbdd'];
-const SUBS=['cambriolage','bijouterie','humanlab','superette','ammu','atm','conteneur','train','fleeca','historique','simulateur'];
+const SUBS=['cambriolage','bijouterie','humanlab','superette','ammu','atm','conteneur','train','fleeca','gofast','historique','simulateur'];
 let currentTab='dashboard';
 function goTab(name){
   if(name==='config'&&!isAdmin())return notify('Config réservée aux admins','err');
@@ -3987,7 +3994,7 @@ function refreshSelects(){
   const cmdFC=document.getElementById('cmdFilterClient');if(cmdFC)cmdFC.innerHTML='<option value="">— Tous —</option>'+S.clients.map(c=>`<option value="${c._id}">${c.nom}</option>`).join('');
   const statsMb=document.getElementById('statsMembre');if(statsMb)statsMb.innerHTML='<option value="">— Tous —</option>'+S.membres.map(m=>`<option value="${m._id}">${m.name}</option>`).join('');
   const h=pgridHTML();
-  ['cambPart','bijPart','hlPart','supPart','ammuPart','trainPart','fleecaPart','drugPart','misAssignes'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=h;});
+  ['cambPart','bijPart','hlPart','supPart','ammuPart','trainPart','fleecaPart','gofastPart','drugPart','misAssignes'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=h;});
 }
 
 // ═══ RENDER ALL ═══
