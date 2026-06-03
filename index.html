@@ -588,7 +588,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2038</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2210</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1584,7 +1584,7 @@ function getVisibleCommandes(){
 
 
 // ═══ STATE ═══
-let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1,train:1,fleeca:1,gofast:1};
+let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1,train:1,fleeca:1,gofast:6};
 
 // ════════════════════════════════════════════
 //  COOLDOWN AUTOMATIQUE PAR COUP (basé sur l'historique réel)
@@ -1689,7 +1689,7 @@ async function fbDel(c,i){try{await FB.deleteDoc(FB.doc(db,c,i));}catch(e){conso
 function saveDaily(){fbSet('config','daily',S.daily);}
 function saveWeekly(){fbSet('config','weekly',S.weekly);}
 function saveCfg(){fbSet('config','main',{mcPct:S.mcPct,perms:S.perms,lim:{...LIM},identity:S.identity});}
-function saveLimits(){if(!isAdmin())return notify('Admin uniquement','err');['superette','ammu','atm','cambriolage','conteneur','bijouterie','humanlab'].forEach(k=>{const el=document.getElementById('lim-'+k);if(el){const v=+el.value;if(v>0)LIM[k]=v;}});saveCfg();notify('✅ Limites sauvegardées','ok');}
+function saveLimits(){if(!isAdmin())return notify('Admin uniquement','err');['superette','ammu','atm','cambriolage','conteneur','bijouterie','humanlab','gofast'].forEach(k=>{const el=document.getElementById('lim-'+k);if(el){const v=+el.value;if(v>0)LIM[k]=v;}});saveCfg();notify('✅ Limites sauvegardées','ok');}
 
 // ═══ UTILS ═══
 const fmt=n=>'$'+(Math.round(+n)||0).toLocaleString('fr-FR');
@@ -3652,7 +3652,7 @@ async function submitArgent(type){
   const montant=+document.getElementById(mIds[type]).value;
   if(!montant||montant<=0)return notify('Montant invalide','err');
   const pids=getChecked(pIds[type]);if(!pids.length)return notify('Sélectionnez des participants','err');
-  if(type==='gofast'){var _blocked=pids.filter(function(p){return countActiveCooldownByMember('gofast',p,24*3600e3)>=1;});if(_blocked.length){var _names=_blocked.map(function(p){var mm=getMembre(p);return mm?mm.name:'?';}).join(', ');return notify('GoFast en cooldown (24h) pour : '+_names,'err');}}
+  if(type==='gofast'){var _blocked=pids.filter(function(p){return countActiveCooldownByMember('gofast',p,24*3600e3)>=(LIM.gofast||6);});if(_blocked.length){var _names=_blocked.map(function(p){var mm=getMembre(p);return mm?mm.name:'?';}).join(', ');return notify('GoFast en cooldown (24h) pour : '+_names,'err');}}
   const notes=document.getElementById(type+'Notes')?.value||'';
   const res=distribute(montant,pids);
   await fbAdd('ops',{type,typeLabel:labels[type],montant,contenu:fmt(montant),notes,mc:res.mc,toShare:res.toShare,shares:res.shares,date:nowStr(),ts:Date.now()});
@@ -4221,6 +4221,7 @@ function renderConfigPage(){
         <div><label>🏧 ATM (par membre/j)</label><div style="display:flex;align-items:center;gap:6px"><input type="number" id="lim-atm" value="${LIM.atm}" min="1" style="width:70px"><span class="lbadge lok">${LIM.atm}/j</span></div></div>
         <div><label>🏠 Cambriolage (par membre/j)</label><div style="display:flex;align-items:center;gap:6px"><input type="number" id="lim-cambriolage" value="${LIM.cambriolage}" min="1" style="width:70px"><span class="lbadge lok">${LIM.cambriolage}/j</span></div></div>
         <div><label>📦 Conteneur (par membre/j)</label><div style="display:flex;align-items:center;gap:6px"><input type="number" id="lim-conteneur" value="${LIM.conteneur}" min="1" style="width:70px"><span class="lbadge lok">${LIM.conteneur}/j</span></div></div>
+        <div><label>🚤 GoFast (par membre/j)</label><div style="display:flex;align-items:center;gap:6px"><input type="number" id="lim-gofast" value="${LIM.gofast||6}" min="1" style="width:70px"><span class="lbadge lok">${LIM.gofast||6}/j</span></div></div>
       </div>
       <div style="font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">LIMITES HEBDOMADAIRES (groupe)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
