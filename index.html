@@ -588,7 +588,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2026</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2034</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1585,7 +1585,54 @@ function getVisibleCommandes(){
 
 
 // ═══ STATE ═══
-let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1};
+let LIM={superette:2,ammu:2,atm:6,cambriolage:6,conteneur:6,bijouterie:1,humanlab:1,train:1,fleeca:1};
+
+// ════════════════════════════════════════════
+//  COOLDOWN AUTOMATIQUE PAR COUP (basé sur l'historique réel)
+// ════════════════════════════════════════════
+// Durées de cooldown par type (ms)
+var COOLDOWN={
+  superette:24*3600e3, ammu:24*3600e3,
+  bijouterie:14*864e5, humanlab:14*864e5, train:14*864e5, fleeca:14*864e5
+};
+// Compte les coups d'un type encore EN cooldown (donc qui occupent un slot)
+function countActiveCooldown(type){
+  var cd=COOLDOWN[type];if(!cd)return 0;
+  var now=Date.now();
+  return S.ops.filter(function(o){return o.type===type&&(now-(o.ts||0))<cd;}).length;
+}
+// Renvoie le timestamp où le prochain slot se libère (le plus ancien coup encore en cooldown)
+function nextFreeTs(type){
+  var cd=COOLDOWN[type];if(!cd)return 0;
+  var now=Date.now();
+  var active=S.ops.filter(function(o){return o.type===type&&(now-(o.ts||0))<cd;}).sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  if(!active.length)return 0;
+  return (active[0].ts||0)+cd;
+}
+// Slots restants pour un type
+function slotsLeft(type){
+  var lim=LIM[type]||0;
+  return Math.max(0,lim-countActiveCooldown(type));
+}
+// Texte lisible du temps restant avant prochain slot
+function cooldownText(type){
+  var ts=nextFreeTs(type);
+  if(!ts)return '';
+  var ms=ts-Date.now();
+  if(ms<=0)return '';
+  var h=Math.floor(ms/3600e3);var d=Math.floor(h/24);
+  if(d>0)return 'prochain slot dans '+d+'j '+(h%24)+'h';
+  if(h>0)return 'prochain slot dans '+h+'h '+Math.floor((ms%3600e3)/60e3)+'min';
+  return 'prochain slot dans '+Math.floor(ms/60e3)+'min';
+}
+// Idem mais par membre (pour cambriolage/conteneur qui sont par membre/jour)
+function countActiveCooldownByMember(type,memberId,cdMs){
+  var now=Date.now();
+  return S.ops.filter(function(o){
+    return o.type===type&&(now-(o.ts||0))<cdMs&&(o.shares||[]).some(function(s){return s.membreId===memberId;});
+  }).length;
+}
+
 let S={mcPct:60,grades:[],membres:[],ops:[],stock:[],stockLog:[],events:[],vehicles:[],sanctions:[],missions:[],reglement:[],items:[],drugs:[],armes:[],commandes:[],clients:[],bankMoves:[],perms:{},daily:{superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}},weekly:{bijouterie:0,humanlab:0},annonces:[],connexions:[],feed:[],polls:[],checklists:[],identity:{name:'ICE CROWS MC',sub:'FiveM · Manager',icon:'💀',accent:'#ff6a1a'}};
 let currentUser=null,db,FB,itemsQte={},currentItemFilter='tous',currentSub='cambriolage';
 let cmdLines=[];let dragSrcGrade=null;
@@ -3569,8 +3616,8 @@ async function submitItemBraq(type){
   const cfgs={cambriolage:{listId:'cambItemsList',partId:'cambPart',totalId:'cambTotal',detailId:'cambDetail',notesId:'cambNotes',resultId:'cambResult',rcId:'cambRC'},bijouterie:{listId:'bijItemsList',partId:'bijPart',totalId:'bijTotal',detailId:'bijDetail',notesId:'bijNotes',resultId:'bijResult',rcId:'bijRC'},humanlab:{listId:'hlItemsList',partId:'hlPart',totalId:'hlTotal',detailId:'hlDetail',notesId:'hlNotes',resultId:'hlResult',rcId:'hlRC'}};
   const c=cfgs[type];
   if(type==='cambriolage'){if(!currentUser)return notify('Connectez-vous','err');const mid=currentUser._id;const used=(S.daily.cambByMembre&&S.daily.cambByMembre[mid])||0;if(used>=LIM.cambriolage)return notify(`Limite ${LIM.cambriolage} cambriolages/membre/jour atteinte`,'err');}
-  if(type==='bijouterie'&&(S.weekly.bijouterie||0)>=LIM.bijouterie)return notify(`Limite ${LIM.bijouterie} bijouterie/semaine atteinte`,'err');
-  if(type==='humanlab'&&(S.weekly.humanlab||0)>=LIM.humanlab)return notify(`Limite ${LIM.humanlab} HumanLab/semaine atteinte`,'err');
+  if(type==='bijouterie'&&slotsLeft('bijouterie')<=0){var _cb=cooldownText('bijouterie');return notify('Limite bijouterie atteinte'+(_cb?' — '+_cb:''),'err');}
+  if(type==='humanlab'&&slotsLeft('humanlab')<=0){var _ch=cooldownText('humanlab');return notify('Limite HumanLab atteinte'+(_ch?' — '+_ch:''),'err');}
   const items=getItemsForSelector(c.listId);if(!items.length)return notify('Sélectionnez au moins un item','err');
   const total=items.reduce((s,i)=>s+i.total,0);
   const notes=document.getElementById(c.notesId)?.value||'';
@@ -3599,8 +3646,7 @@ async function submitItemBraq(type){
 }
 async function submitArgent(type){
   if(!canAccessTab('braquages'))return notify('Accès refusé','err');
-  if(type==='superette'&&(S.daily.superette||0)>=LIM.superette)return notify(`Limite ${LIM.superette} superettes/jour atteinte`,'err');
-  if(type==='ammu'&&(S.daily.ammu||0)>=LIM.ammu)return notify(`Limite ${LIM.ammu} ammu/jour atteinte`,'err');
+  if(COOLDOWN[type]&&slotsLeft(type)<=0){var _ct=cooldownText(type);return notify('Limite atteinte pour '+type+(_ct?' — '+_ct:''),'err');}
   const mIds={superette:'supMontant',ammu:'ammuMontant',train:'trainMontant',fleeca:'fleecaMontant',gofast:'gofastMontant'};
   const pIds={superette:'supPart',ammu:'ammuPart',train:'trainPart',fleeca:'fleecaPart',gofast:'gofastPart'};
   const labels={superette:'Superette',ammu:'Ammunation',train:'Train',fleeca:'Fleeca',gofast:'GoFast'};
@@ -3918,8 +3964,8 @@ function toggleReglForm(show){document.getElementById('reglForm').style.display=
 async function addReglement(){if(!isAdmin())return notify('Admin uniquement','err');const t=document.getElementById('reglTitre').value.trim(),b=document.getElementById('reglBody').value.trim();if(!t||!b)return notify('Titre et contenu requis','err');await fbAdd('reglement',{titre:t,body:b,order:S.reglement.length,date:nowStr()});notify('✅ Article ajouté','ok');document.getElementById('reglTitre').value='';document.getElementById('reglBody').value='';toggleReglForm(false);}
 async function delReglement(id){if(!isAdmin())return;await fbDel('reglement',id);}
 function filterItems(f){currentItemFilter=f;renderItemsBDD();}
-function resetDaily(){if(!requireAction('reset_limits'))return;if(!confirm('Reset journalier ?'))return;S.daily={superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}};saveDaily();notify('✅ Reset journalier','ok');}
-function resetWeekly(){if(!requireAction('reset_limits'))return;if(!confirm('Reset hebdomadaire (bijouterie & humanlab) ?'))return;S.weekly={bijouterie:0,humanlab:0};saveWeekly();notify('✅ Reset hebdo','ok');}
+function resetDaily(){if(!requireAction('reset_limits'))return;if(!confirm('Forcer le reset des compteurs journaliers (ATM, cambriolage, conteneur par membre) ? Note : superette/ammu se rechargent automatiquement 24h après chaque coup.'))return;S.daily={superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}};saveDaily();notify('✅ Compteurs journaliers réinitialisés','ok');}
+function resetWeekly(){if(!requireAction('reset_limits'))return;notify('ℹ️ Plus besoin : bijouterie, HumanLab, train et fleeca se rechargent automatiquement 2 semaines après chaque coup.','info');}
 function computeSal(){const map={};S.ops.forEach(op=>{(op.shares||[]).forEach(sh=>{map[sh.membreId]=(map[sh.membreId]||0)+sh.amount;});});return Object.entries(map).map(([id,total])=>({id,total})).sort((a,b)=>b.total-a.total);}
 async function delOp(id){if(!requireAction('edit_ops'))return;if(!confirm('Supprimer cette opération ?'))return;await fbDel('ops',id);notify('✅ Opération supprimée','ok');}
 async function clearOps(){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Effacer tout ?'))return;const snap=await FB.getDocs(FB.collection(db,'ops'));for(const d of snap.docs)await fbDel('ops',d.id);notify('✅ Historique effacé','ok');}
@@ -4067,7 +4113,7 @@ function renderDashboard(){
   const ac=document.getElementById('addMembreCard');if(ac)ac.style.display=isAdmin()?'':'none';
 }
 function renderLimits(){
-  const sc=S.daily.superette||0,ac=S.daily.ammu||0;
+  const sc=countActiveCooldown('superette'),ac=countActiveCooldown('ammu');
   const sd=document.getElementById('sdot'),scount=document.getElementById('sc'),sp=document.getElementById('sp');
   const limDescEl=document.getElementById('limDesc');if(limDescEl)limDescEl.textContent=`Journalier : superette (${LIM.superette}/j), ammu (${LIM.ammu}/j), ATM/cambu/conteneur (${LIM.atm}/${LIM.cambriolage}/${LIM.conteneur}/membre). Hebdo : bijouterie (${LIM.bijouterie}/sem), humanlab (${LIM.humanlab}/sem).`;
   const limSupEl=document.getElementById('limSup');if(limSupEl)limSupEl.textContent=LIM.superette;
@@ -4075,9 +4121,9 @@ function renderLimits(){
   if(sd)sd.className='dot '+(sc>=LIM.superette?'dr2':sc>=1?'dy':'dg');if(scount)scount.textContent=sc;if(sp)sp.style.width=Math.min(sc/LIM.superette*100,100)+'%';
   const ad=document.getElementById('adot'),acount=document.getElementById('ac'),ap=document.getElementById('ap');
   if(ad)ad.className='dot '+(ac>=LIM.ammu?'dr2':ac>=1?'dy':'dg');if(acount)acount.textContent=ac;if(ap)ap.style.width=Math.min(ac/LIM.ammu*100,100)+'%';
-  const bw=S.weekly.bijouterie||0,hw=S.weekly.humanlab||0;
-  const lb=document.getElementById('limBij');if(lb){lb.textContent=`${bw}/${LIM.bijouterie} sem`;lb.className='lbadge '+(bw>=LIM.bijouterie?'lfull':'lok');}
-  const lh=document.getElementById('limHL');if(lh){lh.textContent=`${hw}/${LIM.humanlab} sem`;lh.className='lbadge '+(hw>=LIM.humanlab?'lfull':'lok');}
+  const bw=countActiveCooldown('bijouterie'),hw=countActiveCooldown('humanlab');
+  const lb=document.getElementById('limBij');if(lb){lb.textContent=`${bw}/${LIM.bijouterie}`+(bw>=LIM.bijouterie?' · '+cooldownText('bijouterie'):'');lb.className='lbadge '+(bw>=LIM.bijouterie?'lfull':'lok');}
+  const lh=document.getElementById('limHL');if(lh){lh.textContent=`${hw}/${LIM.humanlab}`+(hw>=LIM.humanlab?' · '+cooldownText('humanlab'):'');lh.className='lbadge '+(hw>=LIM.humanlab?'lfull':'lok');}
   const lc=document.getElementById('limCamb');if(lc&&currentUser){const u=(S.daily.cambByMembre&&S.daily.cambByMembre[currentUser._id])||0;lc.textContent=`${u}/${LIM.cambriolage}`;lc.className='lbadge '+(u>=LIM.cambriolage?'lfull':u>=LIM.cambriolage*0.6?'lwarn':'lok');}
   const cw=document.getElementById('cambWho');if(cw&&currentUser)cw.textContent=currentUser.name;
   const conw=document.getElementById('contWho');if(conw&&currentUser)conw.textContent=currentUser.name;
@@ -4368,6 +4414,8 @@ function renderMesCmds(){
 function startClock(){const u=()=>{const el=document.getElementById('clock');if(el)el.textContent=new Date().toLocaleString('fr-FR',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});};u();setInterval(u,30000);}
 
 
+
+setInterval(function(){if(typeof renderLimits==='function')try{renderLimits();}catch(e){}if(typeof renderAllBraqInfo==='function')try{renderAllBraqInfo();}catch(e){}},60000);
 </script>
 </body>
 </html>
