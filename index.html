@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0034</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0038</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1075,6 +1075,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ BANQUE ═══ -->
 <div class="page" id="page-banque">
   <div class="stats-row" id="bankStats"></div>
+  <div style="margin-bottom:14px"><button class="btn btn-ghost btn-sm" onclick="openDiagTreso()">🧮 Diagnostic trésorerie (doublons)</button></div>
   <div class="g2" style="margin-bottom:14px">
     <div class="card">
       <div class="card-title">💸 Mouvement de Caisse</div>
@@ -3998,6 +3999,64 @@ async function resetTousPaiements(){
   if(!confirm('⚠️ Supprimer TOUS les '+pays.length+' versements de salaire/acompte/prime ? Chaque membre repartira avec son salaire dû = tout ce qu\'il a gagné. Cette action est irréversible.'))return;
   for(var i=0;i<pays.length;i++){await fbDel('bankMoves',pays[i]._id);}
   notify('✅ '+pays.length+' versements supprimés — paie remise à zéro','ok');
+}
+
+
+// ════════════════════════════════════════════
+//  DIAGNOSTIC TRÉSORERIE (nettoyage doublons)
+// ════════════════════════════════════════════
+function diagTresorerie(){
+  // Regroupe les mouvements de banque par catégorie
+  var groups={};
+  S.bankMoves.forEach(function(m){
+    var k=m.type+'|'+(m.cat||'autre');
+    if(!groups[k])groups[k]={type:m.type,cat:m.cat||'autre',total:0,count:0};
+    groups[k].total+=m.montant||0;groups[k].count++;
+  });
+  var totalOps=S.ops.reduce(function(s,o){return s+(o.montant||0);},0);
+  var entrees=S.bankMoves.filter(function(m){return m.type==='entree';}).reduce(function(s,m){return s+(m.montant||0);},0);
+  var sorties=S.bankMoves.filter(function(m){return m.type==='sortie';}).reduce(function(s,m){return s+(m.montant||0);},0);
+  // Entrées "vente" = doublons probables des ops
+  var entreesVente=S.bankMoves.filter(function(m){return m.type==='entree'&&(m.cat==='vente');}).reduce(function(s,m){return s+(m.montant||0);},0);
+  var soldeActuel=totalOps+entrees-sorties;
+  var soldeSansVente=totalOps+(entrees-entreesVente)-sorties;
+  return {groups:groups,totalOps:totalOps,entrees:entrees,sorties:sorties,entreesVente:entreesVente,soldeActuel:soldeActuel,soldeSansVente:soldeSansVente};
+}
+function openDiagTreso(){
+  var d=diagTresorerie();
+  var _nbVente=S.bankMoves.filter(function(m){return m.type==='entree'&&m.cat==='vente';}).length;
+  var modal=document.getElementById('diagModal');if(modal)modal.remove();
+  modal=document.createElement('div');modal.id='diagModal';modal.className='modal show';
+  var rows='';
+  Object.values(d.groups).sort(function(a,b){return b.total-a.total;}).forEach(function(g){
+    rows+='<tr><td><span class="badge '+(g.type==='entree'?'b-green':'b-red')+'">'+(g.type==='entree'?'⬆ ENTRÉE':'⬇ SORTIE')+'</span></td><td><span class="badge bgray" style="font-size:9px">'+g.cat+'</span></td><td style="text-align:center">'+g.count+'</td><td style="text-align:right;font-family:\'JetBrains Mono\';color:'+(g.type==='entree'?'var(--teal)':'var(--red)')+'">'+(g.type==='entree'?'+':'−')+fmt(g.total)+'</td></tr>';
+  });
+  modal.innerHTML='<div class="mbox" style="max-width:640px;max-height:90vh;overflow-y:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="text-align:left;font-size:19px">🧮 Diagnostic trésorerie</h2><button onclick="document.getElementById(\'diagModal\').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">✕</button></div>'
+    +'<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.9">'
+      +'<div style="display:flex;justify-content:space-between"><span>Total généré par les ops (auto)</span><strong style="color:var(--teal)">+'+fmt(d.totalOps)+'</strong></div>'
+      +'<div style="display:flex;justify-content:space-between"><span>Entrées manuelles totales</span><strong style="color:var(--teal)">+'+fmt(d.entrees)+'</strong></div>'
+      +'<div style="display:flex;justify-content:space-between;color:var(--gold)"><span>↳ dont entrées catégorie "vente" (doublons ?)</span><strong>'+fmt(d.entreesVente)+'</strong></div>'
+      +'<div style="display:flex;justify-content:space-between"><span>Sorties totales</span><strong style="color:var(--red)">−'+fmt(d.sorties)+'</strong></div>'
+      +'<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:8px;padding-top:8px"><span style="font-weight:600">Solde actuel calculé</span><strong style="color:var(--gold);font-size:15px">'+fmt(d.soldeActuel)+'</strong></div>'
+      +'<div style="display:flex;justify-content:space-between;color:var(--teal)"><span style="font-weight:600">Solde SI on retire les entrées "vente"</span><strong style="font-size:15px">'+fmt(d.soldeSansVente)+'</strong></div>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:12px">💡 Si "solde sans vente" est proche de ton vrai compte en jeu, alors les entrées "vente" sont bien des doublons à supprimer (les ops les comptent déjà).</div>'
+    +'<div style="font-family:\'Oswald\';font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">DÉTAIL PAR CATÉGORIE</div>'
+    +'<table class="tbl"><thead><tr><th>Type</th><th>Catégorie</th><th style="text-align:center">Nb</th><th style="text-align:right">Total</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +(isAdmin()?'<button class="btn btn-red" style="width:100%;margin-top:14px" onclick="supprimerEntreesVente()">🗑️ Supprimer les '+_nbVente+' entrées "vente" en doublon</button>':'')
+    +'</div>';
+  document.body.appendChild(modal);
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+}
+async function supprimerEntreesVente(){
+  if(!isAdmin())return notify('Admin uniquement','err');
+  var doublons=S.bankMoves.filter(function(m){return m.type==='entree'&&m.cat==='vente';});
+  if(!doublons.length)return notify('Aucune entrée "vente" à supprimer','info');
+  if(!confirm('Supprimer les '+doublons.length+' entrées manuelles catégorie "vente" ? Elles font doublon avec les ops automatiques. Total : '+fmt(doublons.reduce(function(s,m){return s+(m.montant||0);},0))+'. Irréversible.'))return;
+  for(var i=0;i<doublons.length;i++){await fbDel('bankMoves',doublons[i]._id);}
+  notify('✅ '+doublons.length+' doublons supprimés','ok');
+  var modal=document.getElementById('diagModal');if(modal)modal.remove();
 }
 
 function totalGenere(){
