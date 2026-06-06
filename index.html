@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0038</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0046</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1413,7 +1413,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
     <div class="card">
       <div class="card-title">➕ Ajouter un Item</div>
       <div class="form-group"><label class="form-label">Nom de l'item</label><input id="iNom" placeholder="Tableau de Maître"></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Prix unitaire ($)</label><input type="number" id="iPrix" placeholder="12000" min="0"></div><div class="form-group"><label class="form-label">Type</label><select id="iType"><option value="cambriolage">🏠 Cambriolage</option><option value="bijouterie">💎 Bijouterie</option><option value="humanlab">🧪 HumanLab</option><option value="arme">🔫 Arme</option><option value="commande">🛒 Vente/Commande</option><option value="drogue">💊 Drogue</option><option value="tous">📦 Tous</option></select><div style="font-size:10px;color:var(--muted);margin-top:3px">💊 Les types de drogues se gèrent dans l'onglet Drogues</div></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Prix de vente ($)</label><input type="number" id="iPrix" placeholder="12000" min="0"></div><div class="form-group"><label class="form-label">Prix d'achat / coût club ($)</label><input type="number" id="iPrixAchat" placeholder="0 (optionnel)" min="0"></div><div class="form-group"><label class="form-label">Type</label><select id="iType"><option value="cambriolage">🏠 Cambriolage</option><option value="bijouterie">💎 Bijouterie</option><option value="humanlab">🧪 HumanLab</option><option value="arme">🔫 Arme</option><option value="commande">🛒 Vente/Commande</option><option value="drogue">💊 Drogue</option><option value="tous">📦 Tous</option></select><div style="font-size:10px;color:var(--muted);margin-top:3px">💊 Les types de drogues se gèrent dans l'onglet Drogues</div></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Catégorie</label><select id="iCat"><option value="art">🖼 Art/Tableau</option><option value="bijou">💍 Bijou/Montre</option><option value="elec">💻 Électronique</option><option value="drogue">💊 Drogue</option><option value="arme">🔫 Arme</option><option value="doc">📄 Document</option><option value="autre">📦 Autre</option></select></div><div class="form-group"><label class="form-label">Notes</label><input id="iNotes" placeholder="Info..."></div></div>
       <button class="btn btn-blue" style="width:100%" onclick="addItemBDD()">+ AJOUTER L'ITEM</button>
     </div>
@@ -3854,7 +3854,7 @@ async function submitCommande(){
   document.querySelectorAll('#cmdLines > div').forEach(row=>{
     const sel=row.querySelector('select');const inputs=row.querySelectorAll('input');const qte=+inputs[0].value||1;const prix=+inputs[1].value||(sel?+sel.options[sel.selectedIndex]?.dataset.prix:0);
     const nom=sel?sel.options[sel.selectedIndex]?.text.split(' — ')[0]:'?';
-    if(nom&&qte>0)lines.push({nom,qte,prixUnit:prix,total:qte*prix});
+    const _itObj=sel?S.items.find(function(it){return it._id===sel.value;}):null;const _pa=_itObj?(_itObj.prixAchat||0):0;if(nom&&qte>0)lines.push({nom,qte,prixUnit:prix,total:qte*prix,prixAchat:_pa});
   });
   if(!lines.length)return notify('Ajoutez au moins un article','err');
   const total=lines.reduce((s,l)=>s+l.total,0);const client=getClient(clientId);
@@ -3865,7 +3865,23 @@ async function submitCommande(){
 
 function isArchived(c){return c.statut==='terminee';}
 
-async function updCommande(id,statut){if(!requireAction('validate_commande'))return;const upd={statut};if(statut==='terminee'){upd.archived=true;upd.archivedAt=nowStr();}else{upd.archived=false;}await fbUpd('commandes',id,upd);const lbl={attente:'en attente',prete:'prête',livree:'livrée',payee:'payée',terminee:'terminée et archivée',annulee:'annulée'};notify('Commande '+(lbl[statut]||statut),'ok');}
+async function updCommande(id,statut){if(!requireAction('validate_commande'))return;
+  const cmd=S.commandes.find(c=>c._id===id);
+  const upd={statut};if(statut==='terminee'){upd.archived=true;upd.archivedAt=nowStr();}else{upd.archived=false;}
+  // Quand la commande passe à PAYÉE : entrée (vente) + sortie (coût d'achat) auto, une seule fois
+  if(statut==='payee'&&cmd&&!cmd.encaisse){
+    const totalVente=cmd.total||0;
+    const coutAchat=(cmd.lines||cmd.items||[]).reduce((s,l)=>s+((l.prixAchat||0)*(l.qte||1)),0);
+    const cl=cmd.clientNom||(getClient(cmd.clientId)||{}).nom||'?';
+    if(totalVente>0)await fbAdd('bankMoves',{type:'entree',montant:totalVente,cat:'vente',membreId:'',membreNom:cl,notes:'Commande payée'+(cmd.lines?' : '+cmd.lines.map(l=>l.qte+'× '+l.nom).join(', '):''),date:nowStr(),ts:Date.now()});
+    if(coutAchat>0)await fbAdd('bankMoves',{type:'sortie',montant:coutAchat,cat:'achat',membreId:'',membreNom:'',notes:'Coût d\'achat stock (commande)',date:nowStr(),ts:Date.now()});
+    upd.encaisse=true;
+    if(coutAchat>0)notify('💰 Encaissé : +'+fmt(totalVente)+' · coût '+fmt(coutAchat)+' · marge '+fmt(totalVente-coutAchat),'ok');
+    else notify('💰 Encaissé : +'+fmt(totalVente),'ok');
+  }
+  await fbUpd('commandes',id,upd);
+  const lbl={attente:'en attente',prete:'prête',livree:'livrée',payee:'payée',terminee:'terminée et archivée',annulee:'annulée'};
+  if(statut!=='payee')notify('Commande '+(lbl[statut]||statut),'ok');}
 async function delCommande(id){if(!requireAction('delete_anything'))return;if(!confirm('Supprimer définitivement cette commande ?'))return;await fbDel('commandes',id);notify('Commande supprimée','ok');}
 
 // ═══ BANQUE ═══
@@ -3918,7 +3934,7 @@ async function saveEditMembre(){if(!requireAction('manage_members'))return;
 }
 
 // ═══ OTHER CRUD ═══
-async function addItemBDD(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('iNom').value.trim(),p=+document.getElementById('iPrix').value;if(!n||!p)return notify('Nom et prix requis','err');await fbAdd('itemsBDD',{nom:n,prix:p,type:document.getElementById('iType').value,cat:document.getElementById('iCat').value,notes:document.getElementById('iNotes').value.trim(),date:nowStr()});notify('✅ Item ajouté !','ok');document.getElementById('iNom').value='';document.getElementById('iPrix').value='';}
+async function addItemBDD(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('iNom').value.trim(),p=+document.getElementById('iPrix').value;if(!n||!p)return notify('Nom et prix requis','err');await fbAdd('itemsBDD',{nom:n,prix:p,prixAchat:+document.getElementById('iPrixAchat').value||0,type:document.getElementById('iType').value,cat:document.getElementById('iCat').value,notes:document.getElementById('iNotes').value.trim(),date:nowStr()});notify('✅ Item ajouté !','ok');document.getElementById('iNom').value='';if(document.getElementById('iPrixAchat'))document.getElementById('iPrixAchat').value='';document.getElementById('iPrix').value='';}
 
 async function editItemBDD(id){
   if(!isAdmin())return notify('Admin uniquement','err');
@@ -3932,7 +3948,9 @@ async function editItemBDD(id){
   const cats=[['art','🖼 Art/Tableau'],['bijou','💍 Bijou'],['elec','💻 Électronique'],['arme','🔫 Arme'],['doc','📄 Document'],['autre','📦 Autre']];
   box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:17px;font-weight:700">✏ Modifier l\'item</h3><button onclick="document.getElementById(\'editItemModal\').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button></div>'
     +'<div class="form-group"><label class="form-label">Nom</label><input id="eiNom" value="'+(it.nom||'').replace(/"/g,'&quot;')+'"></div>'
-    +'<div class="form-row"><div class="form-group"><label class="form-label">Prix unitaire ($)</label><input type="number" id="eiPrix" value="'+(it.prix||0)+'"></div>'
+    +'<div class="form-row"><div class="form-group"><label class="form-label">Prix de vente ($)</label><input type="number" id="eiPrix" value="'+(it.prix||0)+'"></div>'
+    +'<div class="form-group"><label class="form-label">Prix d\'achat ($)</label><input type="number" id="eiPrixAchat" value="'+(it.prixAchat||0)+'"></div></div>'
+    +'<div class="form-row"><div class="form-group" style="display:none"></div>'
     +'<div class="form-group"><label class="form-label">Type</label><select id="eiType">'+types.map(t=>'<option value="'+t[0]+'"'+(it.type===t[0]?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div></div>'
     +'<div class="form-row"><div class="form-group"><label class="form-label">Catégorie</label><select id="eiCat">'+cats.map(c=>'<option value="'+c[0]+'"'+(it.cat===c[0]?' selected':'')+'>'+c[1]+'</option>').join('')+'</select></div>'
     +'<div class="form-group"><label class="form-label">Notes</label><input id="eiNotes" value="'+(it.notes||'').replace(/"/g,'&quot;')+'"></div></div>'
@@ -3944,7 +3962,7 @@ async function saveItemBDD(id){
   if(!isAdmin())return notify('Admin uniquement','err');
   const n=document.getElementById('eiNom').value.trim();const p=+document.getElementById('eiPrix').value;
   if(!n||!p)return notify('Nom et prix requis','err');
-  await fbUpd('itemsBDD',id,{nom:n,prix:p,type:document.getElementById('eiType').value,cat:document.getElementById('eiCat').value,notes:document.getElementById('eiNotes').value.trim()});
+  await fbUpd('itemsBDD',id,{nom:n,prix:p,prixAchat:+document.getElementById('eiPrixAchat').value||0,type:document.getElementById('eiType').value,cat:document.getElementById('eiCat').value,notes:document.getElementById('eiNotes').value.trim()});
   document.getElementById('editItemModal')?.remove();
   notify('✅ Item modifié','ok');
 }
@@ -4429,7 +4447,7 @@ function renderItemsBDD(){
   const list=document.getElementById('itemsBDDList');if(!list)return;
   const filtered=currentItemFilter==='tous'?S.items:S.items.filter(i=>i.type===currentItemFilter||i.type==='tous');
   if(!filtered.length){list.innerHTML='<div class="es">Aucun item</div>';return;}
-  list.innerHTML=filtered.sort((a,b)=>b.prix-a.prix).map(item=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:5px"><div style="display:flex;align-items:center;gap:7px"><span>${catIcons[item.cat]||'📦'}</span><div><div style="font-size:13px;font-weight:600">${item.nom}</div><span class="badge bblue" style="font-size:9px">${item.type}</span>${item.notes?` <span style="font-size:10px;color:var(--muted)">${item.notes}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:7px"><span style="font-family:'Share Tech Mono';color:var(--gold);font-size:14px">${fmt(item.prix)}</span>${isAdmin()?`<button class="btn btn-ghost sm" style="padding:2px 6px" onclick="editItemBDD('${item._id}')">✏</button><button class="btn btn-red sm" style="padding:2px 5px" onclick="delItemBDD('${item._id}')">✕</button>`:''}</div></div>`).join('');
+  list.innerHTML=filtered.sort((a,b)=>b.prix-a.prix).map(item=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:5px"><div style="display:flex;align-items:center;gap:7px"><span>${catIcons[item.cat]||'📦'}</span><div><div style="font-size:13px;font-weight:600">${item.nom}</div><span class="badge bblue" style="font-size:9px">${item.type}</span>${item.notes?` <span style="font-size:10px;color:var(--muted)">${item.notes}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:7px">${item.prixAchat?`<span style="font-size:10px;color:var(--muted)" title="Achat ${fmt(item.prixAchat)} · Marge ${fmt(item.prix-item.prixAchat)}">achat ${fmt(item.prixAchat)} · <span style="color:var(--teal)">marge ${fmt(item.prix-item.prixAchat)}</span></span>`:''}<span style="font-family:'Share Tech Mono';color:var(--gold);font-size:14px">${fmt(item.prix)}</span>${isAdmin()?`<button class="btn btn-ghost sm" style="padding:2px 6px" onclick="editItemBDD('${item._id}')">✏</button><button class="btn btn-red sm" style="padding:2px 5px" onclick="delItemBDD('${item._id}')">✕</button>`:''}</div></div>`).join('');
 }
 function renderDroguesPage(){
   const drugOps=S.ops.filter(o=>o.type==='drogue');const tv=drugOps.reduce((s,o)=>s+(o.montant||0),0);const tp=drugOps.reduce((s,o)=>s+(o.qte||0),0);const mc=drugOps.reduce((s,o)=>s+(o.mc||0),0);
