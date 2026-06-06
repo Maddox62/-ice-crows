@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0059</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-2356</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -4241,36 +4241,71 @@ function refreshSelects(){
 
 // ═══ RENDER ALL ═══
 function renderAll(){
-  renderDashboard();renderMembres();renderLimits();renderAtmPage();renderConteneurPage();
-  renderStockPage();renderSalairesPage();renderStatsPage();renderAgendaPage();renderGaragePage();
-  renderSanctionsPage();renderMissionsPage();renderReglementPage();renderConfigPage();
-  renderItemsBDD();renderDroguesPage();renderHistoriqueGlobal();renderArmurerie();
-  renderCommandes();renderBanque();
-  renderMiniChart();renderClassement();updateAlerts();populateHistMemberFilter();renderSmartAlerts();renderRunWidget();renderAnnonces();renderActivityChart();renderConnexions();renderAllBraqInfo();renderInsights();renderHeatmap();renderWeekCard();checkAchievements();renderSimulator();renderFeed();renderOrgChart();renderPolls();renderIdentityForm();renderForecast();renderChecklists();renderActionPerms();renderAlbums();renderTrombi();renderBirthdays();renderCmdQueue();renderSessionWidget();renderPlans();renderPilotage();renderRadio();renderChronicle();renderMemorial();checkNotifTriggers();const _ht=document.getElementById("hdrTresoVal");if(_ht)_ht.textContent=fmt(bankBalance());
-  refreshSelects();
-  if(currentSub==='cambriolage')buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');
-  if(currentSub==='bijouterie')buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');
-  if(currentSub==='humanlab')buildItemSelector('hlItemsList','humanlab','hlTotal','hlDetail');
-  if(currentUser)applyNavPerms();
-  // Ma commande banner
-  const mcb=document.getElementById('maCmdBanner');
-  const mcc=document.getElementById('maCmdCount');
-  if(mcb&&currentUser){
-    const myCmds=S.commandes.filter(c=>c.createdBy===currentUser._id);
-    mcb.style.display='flex';
-    if(mcc){
-      const np=myCmds.filter(c=>c.statut==='prete').length;
-      const npy=myCmds.filter(c=>c.statut==='payee').length;
-      mcc.textContent=(myCmds.length===0?"Aucune commande pour l'instant":myCmds.length+' commande(s)'+(np?' · '+np+' prête(s)':'')+(npy?' · '+npy+' payée(s)':''));
-    }
-  }
-  // Zone admin : visible seulement pour officers/admins
-  const caz=document.getElementById('cmdAdminZone');
-  if(caz&&currentUser){
-    const g=getGrade(currentUser.gradeId);
-    const isOfficer=g&&['admin','officer'].includes(g.perms||'member');
-    caz.style.display=isOfficer?'block':'none';
-  }
+  try{renderDashboard();}catch(e){}
+  try{renderMembres();}catch(e){}
+  try{renderLimits();}catch(e){}
+  try{renderAtmPage();}catch(e){}
+  try{renderConteneurPage();}catch(e){}
+  try{renderStockPage();}catch(e){}
+  try{renderSalairesPage();}catch(e){}
+  try{renderStatsPage();}catch(e){}
+  try{renderAgendaPage();}catch(e){}
+  try{renderGaragePage();}catch(e){}
+  try{renderSanctionsPage();}catch(e){}
+  try{renderMissionsPage();}catch(e){}
+  try{renderReglementPage();}catch(e){}
+  try{renderConfigPage();}catch(e){}
+  try{renderItemsBDD();}catch(e){}
+  try{renderDroguesPage();}catch(e){}
+  try{renderHistoriqueGlobal();}catch(e){}
+  try{renderArmurerie();}catch(e){}
+  try{renderCommandes();}catch(e){}
+  try{renderBanque();}catch(e){}
+  try{renderMiniChart();}catch(e){}
+  try{renderClassement();}catch(e){}
+  try{updateAlerts();}catch(e){}
+  try{populateHistMemberFilter();}catch(e){}
+  try{renderSmartAlerts();}catch(e){}
+  try{renderRunWidget();}catch(e){}
+  try{renderAnnonces();}catch(e){}
+  try{renderActivityChart();}catch(e){}
+  try{renderConnexions();}catch(e){}
+  try{renderAllBraqInfo();}catch(e){}
+  try{renderInsights();}catch(e){}
+  try{renderHeatmap();}catch(e){}
+  try{renderWeekCard();}catch(e){}
+  try{checkAchievements();}catch(e){}
+  try{renderSimulator();}catch(e){}
+  try{renderFeed();}catch(e){}
+  try{renderOrgChart();}catch(e){}
+  try{renderPolls();}catch(e){}
+  try{renderIdentityForm();}catch(e){}
+  try{renderForecast();}catch(e){}
+  try{renderChecklists();}catch(e){}
+  try{renderActionPerms();}catch(e){}
+  try{renderAlbums();}catch(e){}
+  try{renderTrombi();}catch(e){}
+  try{renderBirthdays();}catch(e){}
+  try{renderCmdQueue();}catch(e){}
+  try{renderSessionWidget();}catch(e){}
+  try{renderPlans();}catch(e){}
+  try{renderPilotage();}catch(e){}
+  try{renderRadio();}catch(e){}
+  try{renderChronicle();}catch(e){}
+  try{renderMemorial();}catch(e){}
+  try{checkNotifTriggers();}catch(e){}
+  try{getElementById("hdrTresoVal");}catch(e){}
+  try{refreshSelects();}catch(e){}
+  try{buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');}catch(e){}
+  try{buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');}catch(e){}
+  try{buildItemSelector('hlItemsList','humanlab','hlTotal','hlDetail');}catch(e){}
+  try{applyNavPerms();}catch(e){}
+  try{getElementById('maCmdBanner');}catch(e){}
+  try{getElementById('maCmdCount');}catch(e){}
+  try{filter(c=>c.createdBy===currentUser._id);}catch(e){}
+  try{getElementById('cmdAdminZone');}catch(e){}
+  try{getGrade(currentUser.gradeId);}catch(e){}
+  try{includes(g.perms||'member');}catch(e){}
 }
 
 // ═══ RENDER FUNCTIONS ═══
@@ -4323,11 +4358,11 @@ function renderLimits(){
   const lc=document.getElementById('limCamb');if(lc&&currentUser){const u=(S.daily.cambByMembre&&S.daily.cambByMembre[currentUser._id])||0;lc.textContent=`${u}/${LIM.cambriolage}`;lc.className='lbadge '+(u>=LIM.cambriolage?'lfull':u>=LIM.cambriolage*0.6?'lwarn':'lok');}
   const cw=document.getElementById('cambWho');if(cw&&currentUser)cw.textContent=currentUser.name;
   const conw=document.getElementById('contWho');if(conw&&currentUser)conw.textContent=currentUser.name;
-  const sh=S.daily.supHist||[];const stb=document.getElementById('supHist');if(stb)stb.innerHTML=sh.length===0?`<tr><td colspan="5" class="es">Aucune</td></tr>`:sh.map(s=>`<tr><td>${fmt(s.montant)}</td><td style="color:var(--red)">${fmt(s.res.mc)}</td><td style="color:var(--teal)">${fmt(s.res.toShare)}</td><td style="font-size:11px">${(s.res.shares||[]).map(sh=>{const m=getMembre(sh.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted)">${s.heure}</td></tr>`).join('');
-  const ah=S.daily.ammuHist||[];const atb=document.getElementById('ammuHist');if(atb)atb.innerHTML=ah.length===0?`<tr><td colspan="5" class="es">Aucune</td></tr>`:ah.map(a=>`<tr><td>${fmt(a.montant)}</td><td style="color:var(--red)">${fmt(a.res.mc)}</td><td style="color:var(--teal)">${fmt(a.res.toShare)}</td><td style="font-size:11px">${(a.res.shares||[]).map(sh=>{const m=getMembre(sh.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted)">${a.heure}</td></tr>`).join('');
+  const sh=S.daily.supHist||[];const stb=document.getElementById('supHist');if(stb)stb.innerHTML=sh.length===0?`<tr><td colspan="5" class="es">Aucune</td></tr>`:sh.map(s=>`<tr><td>${fmt(s.montant)}</td><td style="color:var(--red)">${fmt((s.res&&s.res.mc)||0)}</td><td style="color:var(--teal)">${fmt((s.res&&s.res.toShare)||0)}</td><td style="font-size:11px">${((s.res&&s.res.shares)||[]).map(sh=>{const m=getMembre(sh.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted)">${s.heure}</td></tr>`).join('');
+  const ah=S.daily.ammuHist||[];const atb=document.getElementById('ammuHist');if(atb)atb.innerHTML=ah.length===0?`<tr><td colspan="5" class="es">Aucune</td></tr>`:ah.map(a=>`<tr><td>${fmt(a.montant)}</td><td style="color:var(--red)">${fmt((a.res&&a.res.mc)||0)}</td><td style="color:var(--teal)">${fmt((a.res&&a.res.toShare)||0)}</td><td style="font-size:11px">${((a.res&&a.res.shares)||[]).map(sh=>{const m=getMembre(sh.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted)">${a.heure}</td></tr>`).join('');
 }
-function renderAtmPage(){const div=document.getElementById('atmCounters');if(!div)return;div.innerHTML=S.membres.map(m=>{const g=getGrade(m.gradeId);const u=(S.daily.atmHist||[]).filter(a=>a.membreId===m._id).length;return`<div class="stat blue" style="text-align:left"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><strong style="font-size:13px">${m.name}</strong>${gradeBadge(g,"font-size:8px")}</div><div style="font-family:'Share Tech Mono';font-size:14px;color:${u>=LIM.atm?'var(--red)':'var(--green)'}">${u}/${LIM.atm}</div><div class="pbar"><div class="pfill" style="width:${u/LIM.atm*100}%;background:${u>=LIM.atm?'var(--red)':'var(--green)'}"></div></div></div>`;}).join('');const atb=document.getElementById('atmHist');if(atb){const ah=S.daily.atmHist||[];atb.innerHTML=ah.length===0?`<tr><td colspan="5" class="es">Aucun</td></tr>`:ah.map(a=>{const m=getMembre(a.membreId);return`<tr><td>${m?m.name:'?'}</td><td>${fmt(a.montant)}</td><td style="color:var(--red)">${fmt(a.res.mc)}</td><td>${a.restant} rest.</td><td style="color:var(--muted)">${a.heure}</td></tr>`;}).join('');}}
-function renderConteneurPage(){const ch=S.daily.contHist||[];const ctb=document.getElementById('contHist');if(ctb)ctb.innerHTML=ch.length===0?`<tr><td colspan="7" class="es">Aucun</td></tr>`:ch.slice(0,20).map(c=>`<tr><td>${c.membreNom||'?'}</td><td><span class="badge bblue">${c.type}</span></td><td style="font-size:11px">${c.contenu}</td><td>${fmt(c.montant)}</td><td style="color:var(--red)">${fmt(c.res.mc)}</td><td style="font-size:11px">${(c.res.shares||[]).map(s=>{const m=getMembre(s.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted);font-size:11px">${c.date}</td></tr>`).join('');}
+function renderAtmPage(){const div=document.getElementById('atmCounters');if(!div)return;div.innerHTML=S.membres.map(m=>{const g=getGrade(m.gradeId);const u=(S.daily.atmHist||[]).filter(a=>a.membreId===m._id).length;return`<div class="stat blue" style="text-align:left"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><strong style="font-size:13px">${m.name}</strong>${gradeBadge(g,"font-size:8px")}</div><div style="font-family:'Share Tech Mono';font-size:14px;color:${u>=LIM.atm?'var(--red)':'var(--green)'}">${u}/${LIM.atm}</div><div class="pbar"><div class="pfill" style="width:${u/LIM.atm*100}%;background:${u>=LIM.atm?'var(--red)':'var(--green)'}"></div></div></div>`;}).join('');const atb=document.getElementById('atmHist');if(atb){const ah=S.daily.atmHist||[];atb.innerHTML=ah.length===0?`<tr><td colspan="5" class="es">Aucun</td></tr>`:ah.map(a=>{const m=getMembre(a.membreId);return`<tr><td>${m?m.name:'?'}</td><td>${fmt(a.montant)}</td><td style="color:var(--red)">${fmt((a.res&&a.res.mc)||0)}</td><td>${a.restant} rest.</td><td style="color:var(--muted)">${a.heure}</td></tr>`;}).join('');}}
+function renderConteneurPage(){const ch=S.daily.contHist||[];const ctb=document.getElementById('contHist');if(ctb)ctb.innerHTML=ch.length===0?`<tr><td colspan="7" class="es">Aucun</td></tr>`:ch.slice(0,20).map(c=>`<tr><td>${c.membreNom||'?'}</td><td><span class="badge bblue">${c.type}</span></td><td style="font-size:11px">${c.contenu}</td><td>${fmt(c.montant)}</td><td style="color:var(--red)">${fmt((c.res&&c.res.mc)||0)}</td><td style="font-size:11px">${((c.res&&c.res.shares)||[]).map(s=>{const m=getMembre(s.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted);font-size:11px">${c.date}</td></tr>`).join('');}
 function renderStockPage(){const tv=S.stock.reduce((s,i)=>s+(i.qte||0)*(i.prixUnit||0),0);const ss=document.getElementById('stockStats');if(ss)ss.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tv)}</div><div class="stat-label">Valeur en attente</div></div><div class="stat blue"><div class="stat-val">${S.stock.length}</div><div class="stat-label">Types d'items</div></div><div class="stat green"><div class="stat-val">${S.stock.reduce((s,i)=>s+(i.qte||0),0)}</div><div class="stat-label">Quantité totale</div></div>`;
   // Pending summary
   const ps=document.getElementById('stockPendingSummary');
