@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0046</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0059</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1658,7 +1658,7 @@ async function loadAll(){
   const cols={grades:'grades',membres:'membres',ops:'ops',stock:'stock',stockLog:'stockLog',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves',annonces:'annonces',connexions:'connexions',feed:'feed',polls:'polls',checklists:'checklists',albums:'albums',plans:'plans',radio:'radio',chronicle:'chronicle',memorial:'memorial'};S.objective=null;
   for(const[col,key]of Object.entries(cols)){try{const snap=await FB.getDocs(FB.collection(db,col));S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));}catch(e){}}
   S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));
-  try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);}}catch(e){}
+  try{const c=await FB.getDoc(FB.doc(db,'config','main'));if(c.exists()){const d=c.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);S.comptaStart=d.comptaStart||0;}}catch(e){}
   try{const d=await FB.getDoc(FB.doc(db,'config','daily'));if(d.exists())Object.assign(S.daily,d.data());}catch(e){}
   try{const w=await FB.getDoc(FB.doc(db,'config','weekly'));if(w.exists())Object.assign(S.weekly,w.data());}catch(e){}
   if(!S.grades.length)await initDefaultGrades();
@@ -1698,7 +1698,7 @@ async function fbUpd(c,i,d){try{await FB.updateDoc(FB.doc(db,c,i),d);}catch(e){c
 async function fbDel(c,i){try{await FB.deleteDoc(FB.doc(db,c,i));}catch(e){console.error(e);}}
 function saveDaily(){fbSet('config','daily',S.daily);}
 function saveWeekly(){fbSet('config','weekly',S.weekly);}
-function saveCfg(){fbSet('config','main',{mcPct:S.mcPct,perms:S.perms,lim:{...LIM},identity:S.identity});}
+function saveCfg(){fbSet('config','main',{mcPct:S.mcPct,perms:S.perms,lim:{...LIM},identity:S.identity,comptaStart:S.comptaStart||0});}
 function saveLimits(){if(!isAdmin())return notify('Admin uniquement','err');['superette','ammu','atm','cambriolage','conteneur','bijouterie','humanlab','gofast'].forEach(k=>{const el=document.getElementById('lim-'+k);if(el){const v=+el.value;if(v>0)LIM[k]=v;}});saveCfg();notify('✅ Limites sauvegardées','ok');}
 
 // ═══ UTILS ═══
@@ -4023,6 +4023,29 @@ async function resetTousPaiements(){
 // ════════════════════════════════════════════
 //  DIAGNOSTIC TRÉSORERIE (nettoyage doublons)
 // ════════════════════════════════════════════
+
+// Définir la date de départ compta (ignore tout ce qui est avant pour les salaires)
+async function setComptaStart(){
+  if(!isAdmin())return notify('Admin uniquement','err');
+  var cur=S.comptaStart?new Date(S.comptaStart).toLocaleString('fr-FR'):'aucune';
+  var v=prompt('Date de départ de la compta (format JJ/MM/AAAA HH:MM).\nTout ce qui est AVANT cette date sera ignoré pour le calcul des salaires (gagné ET versé).\n\nActuelle : '+cur+'\n\nLaisse vide et OK pour utiliser MAINTENANT, ou tape une date :','');
+  if(v===null)return;
+  var ts;
+  if(!v.trim()){ts=Date.now();}
+  else{
+    var m=v.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    if(!m)return notify('Format invalide. Ex : 06/06/2026 00:00','err');
+    ts=new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)).getTime();
+  }
+  S.comptaStart=ts;
+  await saveCfg();
+  notify('✅ Date de départ compta : '+new Date(ts).toLocaleString('fr-FR'),'ok');
+  renderSalairesPage();
+}
+function comptaStartLabel(){
+  return S.comptaStart?new Date(S.comptaStart).toLocaleDateString('fr-FR'):'depuis le début';
+}
+
 function diagTresorerie(){
   // Regroupe les mouvements de banque par catégorie
   var groups={};
@@ -4082,13 +4105,14 @@ function totalGenere(){
 }
 // Total des parts dues à un membre (somme de ses shares sur toutes les ops)
 function partsDuesMembre(memberId){
-  var t=0;
-  S.ops.forEach(function(o){(o.shares||[]).forEach(function(sh){if(sh.membreId===memberId)t+=sh.amount||0;});});
+  var t=0;var cs=S.comptaStart||0;
+  S.ops.forEach(function(o){if((o.ts||0)<cs)return;(o.shares||[]).forEach(function(sh){if(sh.membreId===memberId)t+=sh.amount||0;});});
   return t;
 }
 // Total déjà versé à un membre (salaires + acomptes, hors primes qui sont des bonus)
 function dejaVerseMembre(memberId){
-  return S.bankMoves.filter(function(m){return m.membreId===memberId&&(m.cat==='salaire'||m.cat==='acompte');}).reduce(function(s,m){return s+(m.montant||0);},0);
+  var cs=S.comptaStart||0;
+  return S.bankMoves.filter(function(m){return m.membreId===memberId&&(m.cat==='salaire'||m.cat==='acompte')&&(m.ts||0)>=cs;}).reduce(function(s,m){return s+(m.montant||0);},0);
 }
 // Salaire encore dû = parts - déjà versé
 function salaireDuMembre(memberId){
@@ -4335,7 +4359,7 @@ function renderSalairesPage(){
     <div style="display:flex;justify-content:space-between"><span>Salaires / acomptes / primes versés</span><strong style="color:var(--red)">−${fmt(bd.salVerses)}</strong></div>
     <div style="display:flex;justify-content:space-between"><span>Autres sorties (banque)</span><strong style="color:var(--red)">−${fmt(bd.autresSorties)}</strong></div>
     <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:6px;padding-top:6px"><span style="font-weight:600">= Trésorerie actuelle</span><strong style="color:var(--gold);font-size:14px">${fmt(bd.solde)}</strong></div>
-    ${isAdmin()?`<button class="btn btn-red btn-xs" style="margin-top:10px" onclick="resetTousPaiements()">🗑️ Remettre à zéro tous les versements (supprime les anciens paiements)</button>`:''}
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">📅 Calcul des salaires : <strong style="color:var(--text)">${comptaStartLabel()}</strong></div>${isAdmin()?`<button class="btn btn-blue btn-xs" style="margin-top:8px;margin-right:6px" onclick="setComptaStart()">📅 Définir date de départ compta</button><button class="btn btn-red btn-xs" style="margin-top:8px" onclick="resetTousPaiements()">🗑️ Supprimer tous les versements</button>`:''}
   </div>`;
   const sc=document.getElementById('salContent');
   if(sc)sc.innerHTML=list.length===0?'<div class="es">Aucune opération</div>':list.map(t=>{
