@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0028</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0034</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1096,6 +1096,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 <!-- ═══ SALAIRES ═══ -->
 <div class="page" id="page-salaires">
   <div class="stats-row" id="salStats"></div>
+  <div id="salBreakdown"></div>
   <div class="card" style="margin-bottom:14px"><div class="card-title">💰 Salaires à Verser</div><div id="salContent"></div><hr class="sep"><button class="btn btn-gold" onclick="exportSal()">📤 EXPORTER</button><button class="btn btn-red btn-sm" style="margin-left:8px" onclick="clearOps()">🗑 Effacer historique ops</button></div>
   <div class="card"><div class="card-title">✅ Salaires Déjà Payés</div><div class="scr"><table class="tbl"><thead><tr><th>Membre</th><th>Type</th><th>Montant</th><th>Notes</th><th>Date</th></tr></thead><tbody id="salPayHist"></tbody></table></div></div>
 </div>
@@ -3979,6 +3980,26 @@ function resetWeekly(){if(!requireAction('reset_limits'))return;notify('ℹ️ P
 //  SYSTÈME DE PAIE — total en banque, salaires déduits au versement
 // ════════════════════════════════════════════
 // Total généré par TOUTES les ops (entre en banque)
+
+// Détail du calcul de trésorerie (pour transparence)
+function tresorerieBreakdown(){
+  var totalOps=S.ops.reduce(function(s,o){return s+(o.montant||0);},0);
+  var entrees=S.bankMoves.filter(function(m){return m.type==='entree';}).reduce(function(s,m){return s+(m.montant||0);},0);
+  var sorties=S.bankMoves.filter(function(m){return m.type==='sortie';}).reduce(function(s,m){return s+(m.montant||0);},0);
+  var salVerses=S.bankMoves.filter(function(m){return m.type==='sortie'&&(m.cat==='salaire'||m.cat==='acompte'||m.cat==='prime');}).reduce(function(s,m){return s+(m.montant||0);},0);
+  var autresSorties=sorties-salVerses;
+  return {totalOps:totalOps,entrees:entrees,sorties:sorties,salVerses:salVerses,autresSorties:autresSorties,solde:totalOps+entrees-sorties};
+}
+// Supprimer TOUS les versements de salaire/acompte/prime (remise à zéro de la paie)
+async function resetTousPaiements(){
+  if(!isAdmin())return notify('Admin uniquement','err');
+  var pays=S.bankMoves.filter(function(m){return m.cat==='salaire'||m.cat==='acompte'||m.cat==='prime';});
+  if(!pays.length)return notify('Aucun versement à supprimer','info');
+  if(!confirm('⚠️ Supprimer TOUS les '+pays.length+' versements de salaire/acompte/prime ? Chaque membre repartira avec son salaire dû = tout ce qu\'il a gagné. Cette action est irréversible.'))return;
+  for(var i=0;i<pays.length;i++){await fbDel('bankMoves',pays[i]._id);}
+  notify('✅ '+pays.length+' versements supprimés — paie remise à zéro','ok');
+}
+
 function totalGenere(){
   return S.ops.reduce(function(s,o){return s+(o.montant||0);},0);
 }
@@ -4228,6 +4249,17 @@ function renderSalairesPage(){
   const list=Object.keys(ids).map(id=>({id:id,parts:partsDuesMembre(id),verse:dejaVerseMembre(id),du:salaireDuMembre(id),prime:primesMembre(id)})).sort((a,b)=>b.du-a.du);
   const totalDu=list.reduce((s,x)=>s+x.du,0);
   const ss=document.getElementById('salStats');if(ss)ss.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tresorerie)}</div><div class="stat-label">Trésorerie MC</div></div><div class="stat red"><div class="stat-val">${fmt(totalDu)}</div><div class="stat-label">Salaires à verser</div></div><div class="stat green"><div class="stat-val">${fmt(totalGen)}</div><div class="stat-label">Total généré</div></div><div class="stat blue"><div class="stat-val">${S.ops.length}</div><div class="stat-label">Ops</div></div>`;
+  const bd=tresorerieBreakdown();
+  const sbd=document.getElementById('salBreakdown');
+  if(sbd)sbd.innerHTML=`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.9">
+    <div style="font-family:'Oswald';font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:6px">🧮 DÉTAIL DE LA TRÉSORERIE</div>
+    <div style="display:flex;justify-content:space-between"><span>Total généré par les ops</span><strong style="color:var(--teal)">+${fmt(bd.totalOps)}</strong></div>
+    <div style="display:flex;justify-content:space-between"><span>Entrées manuelles (banque)</span><strong style="color:var(--teal)">+${fmt(bd.entrees)}</strong></div>
+    <div style="display:flex;justify-content:space-between"><span>Salaires / acomptes / primes versés</span><strong style="color:var(--red)">−${fmt(bd.salVerses)}</strong></div>
+    <div style="display:flex;justify-content:space-between"><span>Autres sorties (banque)</span><strong style="color:var(--red)">−${fmt(bd.autresSorties)}</strong></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:6px;padding-top:6px"><span style="font-weight:600">= Trésorerie actuelle</span><strong style="color:var(--gold);font-size:14px">${fmt(bd.solde)}</strong></div>
+    ${isAdmin()?`<button class="btn btn-red btn-xs" style="margin-top:10px" onclick="resetTousPaiements()">🗑️ Remettre à zéro tous les versements (supprime les anciens paiements)</button>`:''}
+  </div>`;
   const sc=document.getElementById('salContent');
   if(sc)sc.innerHTML=list.length===0?'<div class="es">Aucune opération</div>':list.map(t=>{
     const m=getMembre(t.id);const g=m?getGrade(m.gradeId):null;
