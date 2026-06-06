@@ -545,6 +545,14 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
 .gfilter-n{background:var(--bg2);border-radius:10px;padding:1px 7px;font-size:11px;font-family:'JetBrains Mono';font-weight:700;}
 .gfilter-active .gfilter-n{background:var(--acc);color:#000;}
 
+
+/* ── SALAIRES (paie) ── */
+.sal-row{display:flex;align-items:center;gap:14px;padding:13px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;flex-wrap:wrap;}
+.sal-info{flex:1;min-width:160px;}
+.sal-amount{text-align:right;min-width:90px;}
+.sal-actions{display:flex;gap:6px;flex-wrap:wrap;}
+@media(max-width:880px){.sal-row{flex-direction:column;align-items:stretch}.sal-amount{text-align:left}}
+
 </style>
 </head>
 <body>
@@ -588,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0603-2210</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-0028</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -2526,8 +2534,8 @@ function applyNavPerms(){
 function bankBalance(){
   const e=S.bankMoves.filter(m=>m.type==='entree').reduce((s,m)=>s+m.montant,0);
   const s=S.bankMoves.filter(m=>m.type==='sortie').reduce((a,m)=>a+m.montant,0);
-  const mc=S.ops.reduce((a,o)=>a+(o.mc||0),0);
-  return mc+e-s;
+  const totalOps=S.ops.reduce((a,o)=>a+(o.montant||0),0);
+  return totalOps+e-s;
 }
 
 // ── 6. ALERTES INTELLIGENTES (panneau dashboard) ──
@@ -3966,6 +3974,71 @@ async function delReglement(id){if(!isAdmin())return;await fbDel('reglement',id)
 function filterItems(f){currentItemFilter=f;renderItemsBDD();}
 function resetDaily(){if(!requireAction('reset_limits'))return;if(!confirm('Forcer le reset des compteurs journaliers (ATM, cambriolage, conteneur par membre) ? Note : superette/ammu se rechargent automatiquement 24h après chaque coup.'))return;S.daily={superette:0,ammu:0,supHist:[],ammuHist:[],atmHist:[],contHist:[],cambByMembre:{},contByMembre:{}};saveDaily();notify('✅ Compteurs journaliers réinitialisés','ok');}
 function resetWeekly(){if(!requireAction('reset_limits'))return;notify('ℹ️ Plus besoin : bijouterie, HumanLab, train et fleeca se rechargent automatiquement 2 semaines après chaque coup.','info');}
+
+// ════════════════════════════════════════════
+//  SYSTÈME DE PAIE — total en banque, salaires déduits au versement
+// ════════════════════════════════════════════
+// Total généré par TOUTES les ops (entre en banque)
+function totalGenere(){
+  return S.ops.reduce(function(s,o){return s+(o.montant||0);},0);
+}
+// Total des parts dues à un membre (somme de ses shares sur toutes les ops)
+function partsDuesMembre(memberId){
+  var t=0;
+  S.ops.forEach(function(o){(o.shares||[]).forEach(function(sh){if(sh.membreId===memberId)t+=sh.amount||0;});});
+  return t;
+}
+// Total déjà versé à un membre (salaires + acomptes, hors primes qui sont des bonus)
+function dejaVerseMembre(memberId){
+  return S.bankMoves.filter(function(m){return m.membreId===memberId&&(m.cat==='salaire'||m.cat==='acompte');}).reduce(function(s,m){return s+(m.montant||0);},0);
+}
+// Salaire encore dû = parts - déjà versé
+function salaireDuMembre(memberId){
+  return Math.max(0,partsDuesMembre(memberId)-dejaVerseMembre(memberId));
+}
+// Total des primes versées à un membre
+function primesMembre(memberId){
+  return S.bankMoves.filter(function(m){return m.membreId===memberId&&m.cat==='prime';}).reduce(function(s,m){return s+(m.montant||0);},0);
+}
+
+// Verser tout le salaire dû
+async function payerTout(memberId){
+  if(!requireAction('edit_salaires'))return;
+  var du=salaireDuMembre(memberId);
+  if(du<=0)return notify('Rien à verser pour ce membre','info');
+  var m=getMembre(memberId);
+  if(!confirm('Verser '+fmt(du)+' à '+(m?m.name:'?')+' ? Cela sera déduit de la trésorerie.'))return;
+  await fbAdd('bankMoves',{type:'sortie',montant:du,cat:'salaire',membreId:memberId,membreNom:m?m.name:'',notes:'Salaire complet',date:nowStr(),ts:Date.now()});
+  if(typeof pushFeed==='function')pushFeed('a versé '+fmt(du)+' de salaire à '+(m?m.name:'?'),'💰');
+  notify('✅ Salaire versé : '+fmt(du),'ok');
+}
+// Verser un acompte (montant partiel)
+async function payerAcompte(memberId){
+  if(!requireAction('edit_salaires'))return;
+  var du=salaireDuMembre(memberId);
+  var m=getMembre(memberId);
+  var v=prompt('Montant de l\u2019acompte pour '+(m?m.name:'?')+' (dû : '+fmt(du)+') :','');
+  if(v===null)return;
+  var montant=Math.round(+v);
+  if(!montant||montant<=0)return notify('Montant invalide','err');
+  if(montant>du)return notify('L\u2019acompte dépasse le salaire dû ('+fmt(du)+')','err');
+  await fbAdd('bankMoves',{type:'sortie',montant:montant,cat:'acompte',membreId:memberId,membreNom:m?m.name:'',notes:'Acompte',date:nowStr(),ts:Date.now()});
+  if(typeof pushFeed==='function')pushFeed('a versé un acompte de '+fmt(montant)+' à '+(m?m.name:'?'),'💵');
+  notify('✅ Acompte versé : '+fmt(montant),'ok');
+}
+// Verser une prime (bonus, en plus du salaire)
+async function payerPrime(memberId){
+  if(!requireAction('edit_salaires'))return;
+  var m=getMembre(memberId);
+  var v=prompt('Montant de la prime pour '+(m?m.name:'?')+' :','');
+  if(v===null)return;
+  var montant=Math.round(+v);
+  if(!montant||montant<=0)return notify('Montant invalide','err');
+  await fbAdd('bankMoves',{type:'sortie',montant:montant,cat:'prime',membreId:memberId,membreNom:m?m.name:'',notes:'Prime',date:nowStr(),ts:Date.now()});
+  if(typeof pushFeed==='function')pushFeed('a versé une prime de '+fmt(montant)+' à '+(m?m.name:'?'),'🎁');
+  notify('✅ Prime versée : '+fmt(montant),'ok');
+}
+
 function computeSal(){const map={};S.ops.forEach(op=>{(op.shares||[]).forEach(sh=>{map[sh.membreId]=(map[sh.membreId]||0)+sh.amount;});});return Object.entries(map).map(([id,total])=>({id,total})).sort((a,b)=>b.total-a.total);}
 async function delOp(id){if(!requireAction('edit_ops'))return;if(!confirm('Supprimer cette opération ?'))return;await fbDel('ops',id);notify('✅ Opération supprimée','ok');}
 async function clearOps(){if(!isAdmin())return notify('Admin uniquement','err');if(!confirm('Effacer tout ?'))return;const snap=await FB.getDocs(FB.collection(db,'ops'));for(const d of snap.docs)await fbDel('ops',d.id);notify('✅ Historique effacé','ok');}
@@ -3988,6 +4061,7 @@ function goTab(name){
   if(name==='galerie')renderAlbums();
   if(name==='missions')renderPlans();
   if(name==='pilotage')renderPilotage();
+  if(name==='salaires')renderSalairesPage();
   if(name==='folklore'){renderRadio();renderChronicle();renderMemorial();}
   if(name==='commandes'){markCmdSeen();renderCmdQueue();}
   document.querySelectorAll('.navcat.open').forEach(c=>c.classList.remove('open'));var _ai=document.querySelector(`.navitem[data-tab="${name}"]`);if(_ai){_ai.classList.add('active');var _cat=_ai.closest('.navcat');if(_cat)_cat.classList.add('active');}var _at=document.querySelector(`.ntab[data-tab="${name}"]`);if(_at)_at.classList.add('active');
@@ -4147,10 +4221,20 @@ function renderStockPage(){const tv=S.stock.reduce((s,i)=>s+(i.qte||0)*(i.prixUn
     }
   }const st=document.getElementById('stTable');if(st)st.innerHTML=S.stock.length===0?`<tr><td colspan="4" class="es">Vide</td></tr>`:S.stock.map(s=>`<tr><td>${s.nom}</td><td style="font-family:'Share Tech Mono'">${s.qte}</td><td>${fmt(s.prixUnit)}</td><td style="color:var(--gold)">${fmt((s.qte||0)*(s.prixUnit||0))}</td></tr>`).join('');const sl=document.getElementById('stLog');if(sl)sl.innerHTML=S.stockLog.length===0?`<tr><td colspan="6" class="es">Aucun</td></tr>`:S.stockLog.slice(0,30).map(l=>`<tr><td><span class="badge ${l.action==='Ajout'?'b-green':'b-red'}">${l.action}</span></td><td>${l.nom}</td><td>${l.qte}</td><td>${fmt(l.valeur)}</td><td style="font-size:11px">${l.source}</td><td style="color:var(--muted);font-size:11px">${l.date}</td></tr>`).join('');}
 function renderSalairesPage(){
-  const totals=computeSal();const gt=totals.reduce((s,t)=>s+t.total,0);const mc=S.ops.reduce((s,o)=>s+(o.mc||0),0);
-  const ss=document.getElementById('salStats');if(ss)ss.innerHTML=`<div class="stat red"><div class="stat-val">${fmt(mc)}</div><div class="stat-label">Caisse MC</div></div><div class="stat green"><div class="stat-val">${fmt(gt)}</div><div class="stat-label">Salaires</div></div><div class="stat blue"><div class="stat-val">${S.ops.length}</div><div class="stat-label">Ops</div></div>`;
-  const sc=document.getElementById('salContent');if(sc)sc.innerHTML=totals.length===0?'<div class="es">Aucune opération</div>':totals.map(t=>{const m=getMembre(t.id);const g=m?getGrade(m.gradeId):null;const pct=gt>0?(t.total/gt*100).toFixed(1):0;return`<div class="distrib-row"><div><div style="font-size:15px;font-weight:600">${m?m.name:'?'}</div>${gradeBadge(g)}</div><div style="text-align:right"><div class="distrib-amt">${fmt(t.total)}</div><div style="font-size:11px;color:var(--muted)">${pct}%</div></div></div>`;}).join('');
-  const sph=document.getElementById('salPayHist');if(sph){const pays=S.bankMoves.filter(m=>m.cat==='salaire'||m.cat==='prime').sort((a,b)=>(b.ts||0)-(a.ts||0));sph.innerHTML=pays.length===0?`<tr><td colspan="5" class="es">Aucun</td></tr>`:pays.map(p=>`<tr><td>${p.membreNom||'?'}</td><td><span class="badge ${p.cat==='prime'?'b-gold':'b-green'}">${p.cat}</span></td><td style="color:var(--teal)">${fmt(p.montant)}</td><td style="font-size:11px">${p.notes||'—'}</td><td style="color:var(--muted);font-size:11px">${p.date}</td></tr>`).join('');}
+  const tresorerie=bankBalance();
+  const totalGen=totalGenere();
+  // Membres avec parts dues
+  const ids={};S.ops.forEach(o=>(o.shares||[]).forEach(sh=>{ids[sh.membreId]=true;}));
+  const list=Object.keys(ids).map(id=>({id:id,parts:partsDuesMembre(id),verse:dejaVerseMembre(id),du:salaireDuMembre(id),prime:primesMembre(id)})).sort((a,b)=>b.du-a.du);
+  const totalDu=list.reduce((s,x)=>s+x.du,0);
+  const ss=document.getElementById('salStats');if(ss)ss.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tresorerie)}</div><div class="stat-label">Trésorerie MC</div></div><div class="stat red"><div class="stat-val">${fmt(totalDu)}</div><div class="stat-label">Salaires à verser</div></div><div class="stat green"><div class="stat-val">${fmt(totalGen)}</div><div class="stat-label">Total généré</div></div><div class="stat blue"><div class="stat-val">${S.ops.length}</div><div class="stat-label">Ops</div></div>`;
+  const sc=document.getElementById('salContent');
+  if(sc)sc.innerHTML=list.length===0?'<div class="es">Aucune opération</div>':list.map(t=>{
+    const m=getMembre(t.id);const g=m?getGrade(m.gradeId):null;
+    const paye=t.du<=0;
+    return `<div class="sal-row"><div class="sal-info"><div style="font-size:15px;font-weight:600">${m?m.name:'?'}${m&&m.roadName?` <span style="font-size:10px;color:var(--acc)">"${m.roadName}"</span>`:''}</div><div style="display:flex;gap:6px;align-items:center;margin-top:3px">${gradeBadge(g)}<span style="font-size:10px;color:var(--muted)">gagné ${fmt(t.parts)} · versé ${fmt(t.verse)}${t.prime>0?` · prime ${fmt(t.prime)}`:''}</span></div></div><div class="sal-amount"><div class="distrib-amt" style="color:${paye?'var(--muted)':'var(--teal)'}">${fmt(t.du)}</div><div style="font-size:10px;color:var(--muted)">${paye?'à jour ✓':'à verser'}</div></div><div class="sal-actions">${canDo('edit_salaires')?`<button class="btn btn-green btn-xs" onclick="payerTout('${t.id}')" ${paye?'disabled style=opacity:.4':''}>💰 Payer tout</button><button class="btn btn-ghost btn-xs" onclick="payerAcompte('${t.id}')" ${paye?'disabled style=opacity:.4':''}>💵 Acompte</button><button class="btn btn-gold btn-xs" onclick="payerPrime('${t.id}')">🎁 Prime</button>`:''}</div></div>`;
+  }).join('');
+  const sph=document.getElementById('salPayHist');if(sph){const pays=S.bankMoves.filter(m=>m.cat==='salaire'||m.cat==='prime'||m.cat==='acompte').sort((a,b)=>(b.ts||0)-(a.ts||0));sph.innerHTML=pays.length===0?`<tr><td colspan="5" class="es">Aucun</td></tr>`:pays.map(p=>`<tr><td>${p.membreNom||'?'}</td><td><span class="badge ${p.cat==='prime'?'b-gold':p.cat==='acompte'?'b-blue':'b-green'}">${p.cat}</span></td><td style="color:var(--teal)">${fmt(p.montant)}</td><td style="font-size:11px">${p.notes||'—'}</td><td style="color:var(--muted);font-size:11px">${p.date}</td></tr>`).join('');}
 }
 function renderStatsPage(){
   const periode=document.getElementById('statsPeriode')?.value||'all';const now=Date.now();
@@ -4318,7 +4402,7 @@ function renderCmdHistClient(){
 function renderBanque(){
   const entrees=S.bankMoves.filter(m=>m.type==='entree').reduce((s,m)=>s+m.montant,0);
   const sorties=S.bankMoves.filter(m=>m.type==='sortie').reduce((s,m)=>s+m.montant,0);
-  const mc=S.ops.reduce((s,o)=>s+(o.mc||0),0);const solde=mc+entrees-sorties;
+  const totalOps=S.ops.reduce((s,o)=>s+(o.montant||0),0);const solde=totalOps+entrees-sorties;const mc=totalOps;
   const bs=document.getElementById('bankStats');if(bs)bs.innerHTML=`<div class="stat teal"><div class="stat-val">${fmt(solde)}</div><div class="stat-label">Solde Trésorerie</div></div><div class="stat red"><div class="stat-val">${fmt(mc)}</div><div class="stat-label">Part MC (cumulée)</div></div><div class="stat green"><div class="stat-val">${fmt(entrees)}</div><div class="stat-label">Entrées manuelles</div></div><div class="stat red"><div class="stat-val">${fmt(sorties)}</div><div class="stat-label">Sorties (salaires etc)</div></div>`;
   const bh=document.getElementById('bankHist');if(!bh)return;const sorted=[...S.bankMoves].sort((a,b)=>(b.ts||0)-(a.ts||0));
   bh.innerHTML=sorted.length===0?`<tr><td colspan="7" class="es">Aucun mouvement</td></tr>`:sorted.map(m=>`<tr><td><span class="badge ${m.type==='entree'?'b-green':'b-red'}">${m.type==='entree'?'⬆ ENTRÉE':'⬇ SORTIE'}</span></td><td><span class="badge bgray" style="font-size:9px">${m.cat}</span></td><td style="font-family:'Share Tech Mono';color:${m.type==='entree'?'var(--green)':'var(--red)'}">${m.type==='entree'?'+':'-'}${fmt(m.montant)}</td><td>${m.membreNom||'—'}</td><td style="font-size:11px">${m.notes||'—'}</td><td style="color:var(--muted);font-size:11px">${m.date}</td><td>${isAdmin()?`<button class="btn btn-red sm" style="padding:2px 5px" onclick="delBankMove('${m._id}')">✕</button>`:''}</td></tr>`).join('');
