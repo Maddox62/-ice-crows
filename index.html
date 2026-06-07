@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-2356</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-2359</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -4355,7 +4355,7 @@ function renderLimits(){
   const bw=countActiveCooldown('bijouterie'),hw=countActiveCooldown('humanlab');
   const lb=document.getElementById('limBij');if(lb){lb.textContent=`${bw}/${LIM.bijouterie}`+(bw>=LIM.bijouterie?' · '+cooldownText('bijouterie'):'');lb.className='lbadge '+(bw>=LIM.bijouterie?'lfull':'lok');}
   const lh=document.getElementById('limHL');if(lh){lh.textContent=`${hw}/${LIM.humanlab}`+(hw>=LIM.humanlab?' · '+cooldownText('humanlab'):'');lh.className='lbadge '+(hw>=LIM.humanlab?'lfull':'lok');}
-  const lc=document.getElementById('limCamb');if(lc&&currentUser){const u=(S.daily.cambByMembre&&S.daily.cambByMembre[currentUser._id])||0;lc.textContent=`${u}/${LIM.cambriolage}`;lc.className='lbadge '+(u>=LIM.cambriolage?'lfull':u>=LIM.cambriolage*0.6?'lwarn':'lok');}
+  const lc=document.getElementById('limCamb');if(lc&&currentUser){const u=countActiveCooldownByMember('cambriolage',currentUser._id,24*3600e3);lc.textContent=`${u}/${LIM.cambriolage}`;lc.className='lbadge '+(u>=LIM.cambriolage?'lfull':u>=LIM.cambriolage*0.6?'lwarn':'lok');}
   const cw=document.getElementById('cambWho');if(cw&&currentUser)cw.textContent=currentUser.name;
   const conw=document.getElementById('contWho');if(conw&&currentUser)conw.textContent=currentUser.name;
   const sh=S.daily.supHist||[];const stb=document.getElementById('supHist');if(stb)stb.innerHTML=sh.length===0?`<tr><td colspan="5" class="es">Aucune</td></tr>`:sh.map(s=>`<tr><td>${fmt(s.montant)}</td><td style="color:var(--red)">${fmt((s.res&&s.res.mc)||0)}</td><td style="color:var(--teal)">${fmt((s.res&&s.res.toShare)||0)}</td><td style="font-size:11px">${((s.res&&s.res.shares)||[]).map(sh=>{const m=getMembre(sh.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted)">${s.heure}</td></tr>`).join('');
