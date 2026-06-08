@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0606-2359</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-1231</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -4294,18 +4294,24 @@ function renderAll(){
   try{renderChronicle();}catch(e){}
   try{renderMemorial();}catch(e){}
   try{checkNotifTriggers();}catch(e){}
-  try{getElementById("hdrTresoVal");}catch(e){}
   try{refreshSelects();}catch(e){}
+  try{applyNavPerms();}catch(e){}
+  try{renderMesCmds();}catch(e){}
+  try{markCmdSeen();}catch(e){}
+  try{applyUserBadge();}catch(e){}
+  // Trésorerie header
+  try{var _ht=document.getElementById('hdrTresoVal');if(_ht)_ht.textContent=fmt(bankBalance());}catch(e){}
+  // Items selectors
   try{buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');}catch(e){}
   try{buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');}catch(e){}
   try{buildItemSelector('hlItemsList','humanlab','hlTotal','hlDetail');}catch(e){}
-  try{applyNavPerms();}catch(e){}
-  try{getElementById('maCmdBanner');}catch(e){}
-  try{getElementById('maCmdCount');}catch(e){}
-  try{filter(c=>c.createdBy===currentUser._id);}catch(e){}
-  try{getElementById('cmdAdminZone');}catch(e){}
-  try{getGrade(currentUser.gradeId);}catch(e){}
-  try{includes(g.perms||'member');}catch(e){}
+  // Commandes : bannière membre + zone admin selon le rôle
+  try{
+    var _isOff=canDo('validate_commande');
+    var _az=document.getElementById('cmdAdminZone');if(_az)_az.style.display=_isOff?'block':'none';
+    var _mc=document.getElementById('maCmdCount');
+    if(_mc&&currentUser){var _mine=S.commandes.filter(function(c){return c.createdBy===currentUser._id&&!isArchived(c);}).length;_mc.textContent=_mine>0?(_mine+' commande(s) en cours'):'Aucune commande en cours';}
+  }catch(e){}
 }
 
 // ═══ RENDER FUNCTIONS ═══
@@ -4568,6 +4574,7 @@ function renderCmdHistClient(){
   el.innerHTML=sorted.length===0?'<div class="es">Aucune commande</div>':sorted.map(c=>`<div style="padding:8px 10px;background:var(--bg3);border-radius:5px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><strong>${c.clientNom}</strong><span style="font-family:'Share Tech Mono';color:var(--gold)">${fmt(c.total)}</span></div><div style="font-size:11px;color:var(--muted)">${(c.lines||[]).map(l=>`${l.qte}× ${l.nom} (${fmt(l.prixUnit)})`).join(', ')}</div><div style="display:flex;justify-content:space-between;margin-top:2px"><span class="badge ${cs[c.statut]||'b-gray'}">${c.statut}</span><span style="font-size:10px;color:var(--muted)">${c.date}</span></div></div>`).join('');
 }
 function renderBanque(){
+  try{var _h=document.getElementById('hdrTresoVal');if(_h)_h.textContent=fmt(bankBalance());}catch(e){}
   const entrees=S.bankMoves.filter(m=>m.type==='entree').reduce((s,m)=>s+m.montant,0);
   const sorties=S.bankMoves.filter(m=>m.type==='sortie').reduce((s,m)=>s+m.montant,0);
   const totalOps=S.ops.reduce((s,o)=>s+(o.montant||0),0);const solde=totalOps+entrees-sorties;const mc=totalOps;
