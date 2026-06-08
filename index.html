@@ -601,7 +601,7 @@ input[id^="vsqte-"]::-webkit-inner-spin-button,input[id^="vsprix-"]::-webkit-inn
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2236</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2242</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -3769,8 +3769,7 @@ function buildVenteSellLines(){
     const div=document.createElement('div');
     div.style.cssText='display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px';
     div.innerHTML='<div style="flex:2"><div style="font-weight:600;font-size:13px">'+item.nom+'</div><div style="font-size:10px;color:var(--muted2)">'+(item.source||'')+' — Stock: '+item.qte+'</div></div><div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;color:var(--muted2)">Qté</span><input type="number" id="vsqte-'+item._id+'" value="0" min="0" max="'+item.qte+'" style="width:74px" oninput="calcVsTotal()"></div><div style="display:flex;align-items:center;gap:5px;margin-left:4px"><span style="font-size:10px;color:var(--muted2)" title="Prix de vente issu de la base d\u2019items (modifiable)">Prix/u 📋</span><input type="number" id="vsprix-'+item._id+'" value="'+prixVenteBDD(item.nom,item.prixUnit)+'" min="0" style="width:96px" oninput="calcVsTotal()"></div><div class="mono gold" style="min-width:68px;text-align:right;font-size:13px" id="vsline-total-'+item._id+'">$0</div>';
-    const toutBtn=document.createElement('button');toutBtn.className='btn btn-ghost btn-xs';toutBtn.textContent='Tout';toutBtn.onclick=function(){vsSetAll(item._id,item.qte);};
-    div.children[1].appendChild(toutBtn);
+    div.children[1].insertAdjacentHTML('afterbegin','<button class="btn btn-ghost btn-xs" onclick="vsSetAll(\''+item._id+'\','+item.qte+')">Tout</button>');
     return div.outerHTML;
   }).join('');
   el.innerHTML=_selBtns+_vlines;
@@ -3778,11 +3777,13 @@ function buildVenteSellLines(){
 }
 function vsSetAll(itemId,max){const el=document.getElementById('vsqte-'+itemId);if(el){el.value=max;calcVsTotal();}}
 function vsSelectAll(){
-  S.stock.filter(i=>i.fromBraquage===true).forEach(i=>{const el=document.getElementById('vsqte-'+i._id);if(el)el.value=i.qte;});
+  var SRC=['Cambriolage','Bijouterie','HumanLab','Conteneur'];
+  S.stock.filter(i=>(i.fromBraquage===true||(i.source&&SRC.some(s=>i.source.includes(s))))&&estVendableBDD(i.nom)).forEach(i=>{const el=document.getElementById('vsqte-'+i._id);if(el)el.value=i.qte;});
   calcVsTotal();
 }
 function vsSelectNone(){
-  S.stock.filter(i=>i.fromBraquage===true).forEach(i=>{const el=document.getElementById('vsqte-'+i._id);if(el)el.value=0;});
+  var SRC=['Cambriolage','Bijouterie','HumanLab','Conteneur'];
+  S.stock.filter(i=>(i.fromBraquage===true||(i.source&&SRC.some(s=>i.source.includes(s))))&&estVendableBDD(i.nom)).forEach(i=>{const el=document.getElementById('vsqte-'+i._id);if(el)el.value=0;});
   calcVsTotal();
 }
 function calcVsTotal(){
