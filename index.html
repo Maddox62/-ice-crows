@@ -601,7 +601,7 @@ input[id^="vsqte-"]::-webkit-inner-spin-button,input[id^="vsprix-"]::-webkit-inn
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2223</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2236</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1420,6 +1420,7 @@ input[id^="vsqte-"]::-webkit-inner-spin-button,input[id^="vsprix-"]::-webkit-inn
       <div class="form-group"><label class="form-label">Nom de l'item</label><input id="iNom" placeholder="Tableau de Maître"></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Prix de vente ($)</label><input type="number" id="iPrix" placeholder="12000" min="0"></div><div class="form-group"><label class="form-label">Prix d'achat / coût club ($)</label><input type="number" id="iPrixAchat" placeholder="0 (optionnel)" min="0"></div><div class="form-group"><label class="form-label">Type</label><select id="iType"><option value="cambriolage">🏠 Cambriolage</option><option value="bijouterie">💎 Bijouterie</option><option value="humanlab">🧪 HumanLab</option><option value="arme">🔫 Arme</option><option value="commande">🛒 Vente/Commande</option><option value="drogue">💊 Drogue</option><option value="tous">📦 Tous</option></select><div style="font-size:10px;color:var(--muted);margin-top:3px">💊 Les types de drogues se gèrent dans l'onglet Drogues</div></div></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Catégorie</label><select id="iCat"><option value="art">🖼 Art/Tableau</option><option value="bijou">💍 Bijou/Montre</option><option value="elec">💻 Électronique</option><option value="drogue">💊 Drogue</option><option value="arme">🔫 Arme</option><option value="doc">📄 Document</option><option value="autre">📦 Autre</option></select></div><div class="form-group"><label class="form-label">Notes</label><input id="iNotes" placeholder="Info..."></div></div>
+      <label style="display:flex;align-items:center;gap:8px;margin:10px 0;cursor:pointer;font-size:13px"><input type="checkbox" id="iVendable" checked style="width:16px;height:16px;accent-color:var(--acc)"> 💸 Vendable en gros (apparaît dans la vente groupée)</label>
       <button class="btn btn-blue" style="width:100%" onclick="addItemBDD()">+ AJOUTER L'ITEM</button>
     </div>
     <div class="card">
@@ -3761,7 +3762,7 @@ function goVenteStock(){
 }
 function buildVenteSellLines(){
   const el=document.getElementById('vsSellLines');if(!el)return;
-  var SRC_VENDABLE=['Cambriolage','Bijouterie','HumanLab','Conteneur'];const stockVendable=S.stock.filter(item=>item.fromBraquage===true||(item.source&&SRC_VENDABLE.some(s=>item.source.includes(s))));
+  var SRC_VENDABLE=['Cambriolage','Bijouterie','HumanLab','Conteneur'];const stockVendable=S.stock.filter(item=>(item.fromBraquage===true||(item.source&&SRC_VENDABLE.some(s=>item.source.includes(s))))&&estVendableBDD(item.nom));
   if(!stockVendable.length){el.innerHTML='<div class="es">Aucun item de cambriolage, bijouterie, HumanLab ou conteneur en stock</div>';calcVsTotal();return;}
   const _selBtns='<div style="display:flex;gap:6px;margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="vsSelectAll()">✅ Tout</button><button class="btn btn-red btn-sm" onclick="vsSelectNone()">✕ Vider</button></div>';
   const _vlines=stockVendable.map(function(item){
@@ -3797,6 +3798,15 @@ function calcVsTotal(){
 }
  
 // Prix de vente depuis la base d'items (match par nom), fallback sur prixUnit du stock
+
+// Un item du stock est-il marqué vendable en gros dans la BDD ?
+function estVendableBDD(nom){
+  if(!nom)return true;
+  var it=S.items.find(function(i){return i.nom&&i.nom.toLowerCase()===nom.toLowerCase();});
+  if(!it)return true; // pas dans la BDD → on laisse vendable par défaut
+  return it.vendable!==false;
+}
+
 function prixVenteBDD(nom,fallback){
   if(!nom)return fallback||0;
   var it=S.items.find(function(i){return i.nom&&i.nom.toLowerCase()===nom.toLowerCase();});
@@ -3806,7 +3816,7 @@ function prixVenteBDD(nom,fallback){
 async function submitVenteStock(){
   if(!canAccessTab('stock'))return notify('Accès refusé','err');
   const SOURCES_VALIDES=['Cambriolage','Bijouterie','HumanLab','Conteneur'];
-  const stockVendable=S.stock.filter(i=>i.fromBraquage===true||(i.source&&SOURCES_VALIDES.some(s=>i.source.includes(s))));
+  const stockVendable=S.stock.filter(i=>(i.fromBraquage===true||(i.source&&SOURCES_VALIDES.some(s=>i.source.includes(s))))&&estVendableBDD(i.nom));
   const lines=[];let total=0;
   for(const item of stockVendable){
     const qte=+document.getElementById('vsqte-'+item._id)?.value||0;
@@ -3966,7 +3976,7 @@ async function saveEditMembre(){if(!requireAction('manage_members'))return;
 }
 
 // ═══ OTHER CRUD ═══
-async function addItemBDD(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('iNom').value.trim(),p=+document.getElementById('iPrix').value;if(!n||!p)return notify('Nom et prix requis','err');await fbAdd('itemsBDD',{nom:n,prix:p,prixAchat:+document.getElementById('iPrixAchat').value||0,type:document.getElementById('iType').value,cat:document.getElementById('iCat').value,notes:document.getElementById('iNotes').value.trim(),date:nowStr()});notify('✅ Item ajouté !','ok');document.getElementById('iNom').value='';if(document.getElementById('iPrixAchat'))document.getElementById('iPrixAchat').value='';document.getElementById('iPrix').value='';}
+async function addItemBDD(){if(!isAdmin())return notify('Admin uniquement','err');const n=document.getElementById('iNom').value.trim(),p=+document.getElementById('iPrix').value;if(!n||!p)return notify('Nom et prix requis','err');await fbAdd('itemsBDD',{nom:n,prix:p,prixAchat:+document.getElementById('iPrixAchat').value||0,vendable:document.getElementById('iVendable')?document.getElementById('iVendable').checked:true,type:document.getElementById('iType').value,cat:document.getElementById('iCat').value,notes:document.getElementById('iNotes').value.trim(),date:nowStr()});notify('✅ Item ajouté !','ok');document.getElementById('iNom').value='';if(document.getElementById('iPrixAchat'))document.getElementById('iPrixAchat').value='';document.getElementById('iPrix').value='';}
 
 async function editItemBDD(id){
   if(!isAdmin())return notify('Admin uniquement','err');
@@ -3986,6 +3996,7 @@ async function editItemBDD(id){
     +'<div class="form-group"><label class="form-label">Type</label><select id="eiType">'+types.map(t=>'<option value="'+t[0]+'"'+(it.type===t[0]?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div></div>'
     +'<div class="form-row"><div class="form-group"><label class="form-label">Catégorie</label><select id="eiCat">'+cats.map(c=>'<option value="'+c[0]+'"'+(it.cat===c[0]?' selected':'')+'>'+c[1]+'</option>').join('')+'</select></div>'
     +'<div class="form-group"><label class="form-label">Notes</label><input id="eiNotes" value="'+(it.notes||'').replace(/"/g,'&quot;')+'"></div></div>'
+    +'<label style="display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer;font-size:13px"><input type="checkbox" id="eiVendable" '+((it.vendable!==false)?'checked':'')+' style="width:16px;height:16px;accent-color:var(--acc)"> 💸 Vendable en gros</label>'
     +'<button class="btn btn-teal" style="width:100%" onclick="saveItemBDD(\''+id+'\')">💾 Sauvegarder</button>';
   modal.appendChild(box);modal.onclick=function(e){if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
@@ -3994,7 +4005,7 @@ async function saveItemBDD(id){
   if(!isAdmin())return notify('Admin uniquement','err');
   const n=document.getElementById('eiNom').value.trim();const p=+document.getElementById('eiPrix').value;
   if(!n||!p)return notify('Nom et prix requis','err');
-  await fbUpd('itemsBDD',id,{nom:n,prix:p,prixAchat:+document.getElementById('eiPrixAchat').value||0,type:document.getElementById('eiType').value,cat:document.getElementById('eiCat').value,notes:document.getElementById('eiNotes').value.trim()});
+  await fbUpd('itemsBDD',id,{nom:n,prix:p,prixAchat:+document.getElementById('eiPrixAchat').value||0,vendable:document.getElementById('eiVendable')?document.getElementById('eiVendable').checked:true,type:document.getElementById('eiType').value,cat:document.getElementById('eiCat').value,notes:document.getElementById('eiNotes').value.trim()});
   document.getElementById('editItemModal')?.remove();
   notify('✅ Item modifié','ok');
 }
@@ -4545,7 +4556,7 @@ function renderItemsBDD(){
   const list=document.getElementById('itemsBDDList');if(!list)return;
   const filtered=currentItemFilter==='tous'?S.items:S.items.filter(i=>i.type===currentItemFilter||i.type==='tous');
   if(!filtered.length){list.innerHTML='<div class="es">Aucun item</div>';return;}
-  list.innerHTML=filtered.sort((a,b)=>b.prix-a.prix).map(item=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:5px"><div style="display:flex;align-items:center;gap:7px"><span>${catIcons[item.cat]||'📦'}</span><div><div style="font-size:13px;font-weight:600">${item.nom}</div><span class="badge bblue" style="font-size:9px">${item.type}</span>${item.notes?` <span style="font-size:10px;color:var(--muted)">${item.notes}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:7px">${item.prixAchat?`<span style="font-size:10px;color:var(--muted)" title="Achat ${fmt(item.prixAchat)} · Marge ${fmt(item.prix-item.prixAchat)}">achat ${fmt(item.prixAchat)} · <span style="color:var(--teal)">marge ${fmt(item.prix-item.prixAchat)}</span></span>`:''}<span style="font-family:'Share Tech Mono';color:var(--gold);font-size:14px">${fmt(item.prix)}</span>${isAdmin()?`<button class="btn btn-ghost sm" style="padding:2px 6px" onclick="editItemBDD('${item._id}')">✏</button><button class="btn btn-red sm" style="padding:2px 5px" onclick="delItemBDD('${item._id}')">✕</button>`:''}</div></div>`).join('');
+  list.innerHTML=filtered.sort((a,b)=>b.prix-a.prix).map(item=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:5px"><div style="display:flex;align-items:center;gap:7px"><span>${catIcons[item.cat]||'📦'}</span><div><div style="font-size:13px;font-weight:600">${item.nom}</div><span class="badge bblue" style="font-size:9px">${item.type}</span>${item.notes?` <span style="font-size:10px;color:var(--muted)">${item.notes}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:7px">${item.vendable===false?`<span style="font-size:9px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:1px 5px">non vendable</span>`:''}${item.prixAchat?`<span style="font-size:10px;color:var(--muted)" title="Achat ${fmt(item.prixAchat)} · Marge ${fmt(item.prix-item.prixAchat)}">achat ${fmt(item.prixAchat)} · <span style="color:var(--teal)">marge ${fmt(item.prix-item.prixAchat)}</span></span>`:''}<span style="font-family:'Share Tech Mono';color:var(--gold);font-size:14px">${fmt(item.prix)}</span>${isAdmin()?`<button class="btn btn-ghost sm" style="padding:2px 6px" onclick="editItemBDD('${item._id}')">✏</button><button class="btn btn-red sm" style="padding:2px 5px" onclick="delItemBDD('${item._id}')">✕</button>`:''}</div></div>`).join('');
 }
 function renderDroguesPage(){
   const drugOps=S.ops.filter(o=>o.type==='drogue');const tv=drugOps.reduce((s,o)=>s+(o.montant||0),0);const tp=drugOps.reduce((s,o)=>s+(o.qte||0),0);const mc=drugOps.reduce((s,o)=>s+(o.mc||0),0);
