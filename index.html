@@ -596,7 +596,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2146</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2214</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -939,7 +939,7 @@ input[type="color"]{padding:3px;height:40px;cursor:pointer;}
   <div class="g2" style="margin-bottom:14px">
     <div class="card">
       <div class="card-title">➕ Ajouter au Stock</div>
-      <div class="form-group"><label class="form-label">Item</label><input id="stNom" placeholder="Nom de l'item"></div>
+      <div class="form-group"><label class="form-label">Item</label><select id="stNom" onchange="stockItemSelected()"><option value="">— Choisir un item —</option></select></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Quantité</label><input type="number" id="stQte" placeholder="10" min="1"></div><div class="form-group"><label class="form-label">Prix unitaire ($)</label><input type="number" id="stPrix" placeholder="5000" min="0"></div></div>
       <div class="form-group"><label class="form-label">Source</label><select id="stSource"><option>Cambriolage</option><option>Bijouterie</option><option>HumanLab</option><option>Conteneur</option><option>Achat</option><option>Autre</option></select></div>
       <button class="btn btn-teal" style="width:100%" onclick="addStock()">+ AJOUTER</button>
@@ -3728,7 +3728,27 @@ async function submitDrug(){
 
 // ═══ STOCK ═══
 function addToStock(nom,qte,prixUnit,source,fromBraquage=false){const ex=S.stock.find(s=>s.nom&&s.nom.toLowerCase()===nom.toLowerCase()&&s.fromBraquage===fromBraquage);if(ex)fbUpd('stock',ex._id,{qte:(ex.qte||0)+qte});else fbAdd('stock',{nom,qte,prixUnit,source,fromBraquage,date:nowStr()});fbAdd('stockLog',{action:'Ajout',nom,qte,valeur:qte*prixUnit,source,date:nowStr()});}
-async function addStock(){if(!canAccessTab('stock'))return notify('Accès refusé','err');const nom=document.getElementById('stNom').value.trim();const qte=+document.getElementById('stQte').value;const prix=+document.getElementById('stPrix').value;const src=document.getElementById('stSource').value;if(!nom||!qte||!prix)return notify('Renseignez tous les champs','err');addToStock(nom,qte,prix,src);notify('✅ Ajouté au stock','ok');['stNom','stQte','stPrix'].forEach(id=>document.getElementById(id).value='');}
+async 
+// Remplit la liste déroulante des items (BDD) pour l'ajout au stock
+function populateStockItemSelect(){
+  var sel=document.getElementById('stNom');if(!sel)return;
+  var cur=sel.value;
+  var items=[].concat(S.items||[]).sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');});
+  sel.innerHTML='<option value="">— Choisir un item —</option>'+items.map(function(it){
+    return '<option value="'+(it.nom||'').replace(/"/g,'&quot;')+'" data-prix="'+(it.prix||0)+'">'+it.nom+' — '+fmt(it.prix||0)+'</option>';
+  }).join('');
+  if(cur)sel.value=cur;
+}
+// Quand on choisit un item, pré-remplit le prix unitaire avec celui de la BDD
+function stockItemSelected(){
+  var sel=document.getElementById('stNom');if(!sel)return;
+  var opt=sel.options[sel.selectedIndex];
+  var prix=opt?opt.getAttribute('data-prix'):0;
+  var pf=document.getElementById('stPrix');
+  if(pf&&prix)pf.value=prix;
+}
+
+function addStock(){if(!canAccessTab('stock'))return notify('Accès refusé','err');const nom=document.getElementById('stNom').value.trim();const qte=+document.getElementById('stQte').value;const prix=+document.getElementById('stPrix').value;const src=document.getElementById('stSource').value;if(!nom)return notify('Choisissez un item dans la liste','err');if(!qte||!prix)return notify('Renseignez quantité et prix','err');addToStock(nom,qte,prix,src);notify('✅ Ajouté au stock','ok');['stNom','stQte','stPrix'].forEach(id=>document.getElementById(id).value='');}
 async function removeStock(){if(!canAccessTab('stock'))return notify('Accès refusé','err');const id=document.getElementById('stRetireItem').value;const qte=+document.getElementById('stRetireQte').value;const motif=document.getElementById('stRetireMotif').value||'Retrait';const item=S.stock.find(s=>s._id===id);if(!item)return notify('Introuvable','err');if(qte<=0||qte>item.qte)return notify(`Max ${item.qte}`,'err');const nq=item.qte-qte;if(nq===0)await fbDel('stock',id);else await fbUpd('stock',id,{qte:nq});await fbAdd('stockLog',{action:'Retrait',nom:item.nom,qte,valeur:qte*item.prixUnit,source:motif,date:nowStr()});notify('✅ Retiré','ok');}
 
 function goVenteStock(){
@@ -4377,7 +4397,8 @@ function renderLimits(){
 }
 function renderAtmPage(){const div=document.getElementById('atmCounters');if(!div)return;div.innerHTML=S.membres.map(m=>{const g=getGrade(m.gradeId);const u=(S.daily.atmHist||[]).filter(a=>a.membreId===m._id).length;return`<div class="stat blue" style="text-align:left"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><strong style="font-size:13px">${m.name}</strong>${gradeBadge(g,"font-size:8px")}</div><div style="font-family:'Share Tech Mono';font-size:14px;color:${u>=LIM.atm?'var(--red)':'var(--green)'}">${u}/${LIM.atm}</div><div class="pbar"><div class="pfill" style="width:${u/LIM.atm*100}%;background:${u>=LIM.atm?'var(--red)':'var(--green)'}"></div></div></div>`;}).join('');const atb=document.getElementById('atmHist');if(atb){const ah=S.daily.atmHist||[];atb.innerHTML=ah.length===0?`<tr><td colspan="5" class="es">Aucun</td></tr>`:ah.map(a=>{const m=getMembre(a.membreId);return`<tr><td>${m?m.name:'?'}</td><td>${fmt(a.montant)}</td><td style="color:var(--red)">${fmt((a.res&&a.res.mc)||0)}</td><td>${a.restant} rest.</td><td style="color:var(--muted)">${a.heure}</td></tr>`;}).join('');}}
 function renderConteneurPage(){const ch=S.daily.contHist||[];const ctb=document.getElementById('contHist');if(ctb)ctb.innerHTML=ch.length===0?`<tr><td colspan="7" class="es">Aucun</td></tr>`:ch.slice(0,20).map(c=>`<tr><td>${c.membreNom||'?'}</td><td><span class="badge bblue">${c.type}</span></td><td style="font-size:11px">${c.contenu}</td><td>${fmt(c.montant)}</td><td style="color:var(--red)">${fmt((c.res&&c.res.mc)||0)}</td><td style="font-size:11px">${((c.res&&c.res.shares)||[]).map(s=>{const m=getMembre(s.membreId);return m?m.name:'?';}).join(', ')}</td><td style="color:var(--muted);font-size:11px">${c.date}</td></tr>`).join('');}
-function renderStockPage(){const tv=S.stock.reduce((s,i)=>s+(i.qte||0)*(i.prixUnit||0),0);const ss=document.getElementById('stockStats');if(ss)ss.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tv)}</div><div class="stat-label">Valeur en attente</div></div><div class="stat blue"><div class="stat-val">${S.stock.length}</div><div class="stat-label">Types d'items</div></div><div class="stat green"><div class="stat-val">${S.stock.reduce((s,i)=>s+(i.qte||0),0)}</div><div class="stat-label">Quantité totale</div></div>`;
+function renderStockPage(){
+  try{populateStockItemSelect();}catch(e){}const tv=S.stock.reduce((s,i)=>s+(i.qte||0)*(i.prixUnit||0),0);const ss=document.getElementById('stockStats');if(ss)ss.innerHTML=`<div class="stat gold"><div class="stat-val">${fmt(tv)}</div><div class="stat-label">Valeur en attente</div></div><div class="stat blue"><div class="stat-val">${S.stock.length}</div><div class="stat-label">Types d'items</div></div><div class="stat green"><div class="stat-val">${S.stock.reduce((s,i)=>s+(i.qte||0),0)}</div><div class="stat-label">Quantité totale</div></div>`;
   // Pending summary
   const ps=document.getElementById('stockPendingSummary');
   if(ps){
