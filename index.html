@@ -601,7 +601,7 @@ input[id^="vsqte-"]::-webkit-inner-spin-button,input[id^="vsprix-"]::-webkit-inn
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0610-1149</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0610-1842</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -4353,8 +4353,15 @@ function renderAll(){
   try{renderMesCmds();}catch(e){}
   try{markCmdSeen();}catch(e){}
   try{applyUserBadge();}catch(e){}
-
-
+  // Trésorerie header (toujours, léger)
+  try{var _ht=document.getElementById('hdrTresoVal');if(_ht)_ht.textContent=fmt(bankBalance());}catch(e){}
+  // Bannière commandes membre + zone admin (toujours, léger)
+  try{
+    var _isOff=canDo('validate_commande');
+    var _az=document.getElementById('cmdAdminZone');if(_az)_az.style.display=_isOff?'block':'none';
+    var _mc=document.getElementById('maCmdCount');
+    if(_mc&&currentUser){var _mine=S.commandes.filter(function(c){return c.createdBy===currentUser._id&&!isArchived(c);}).length;_mc.textContent=_mine>0?(_mine+' commande(s) en cours'):'Aucune commande en cours';}
+  }catch(e){}
 }
 
 // ═══ RENDER FUNCTIONS ═══
