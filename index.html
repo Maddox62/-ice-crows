@@ -601,7 +601,7 @@ input[id^="vsqte-"]::-webkit-inner-spin-button,input[id^="vsprix-"]::-webkit-inn
   <div class="hright">
     <div class="online-row" id="onlineDiv"></div>
     <div class="ubadge" onclick="openMyProfile()" style="cursor:pointer" title="Mon profil"><div class="uav" id="uAvatar">?</div><div><div class="uname" id="uName">—</div><div class="ugrade" id="uRole"></div></div></div>
-    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0608-2246</span>
+    <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono';opacity:.6" title="Version déployée">v0610-1149</span>
     <button id="themeBtn" onclick="toggleTheme()" title="Changer de thème" style="background:var(--bg3);border:1px solid var(--border2);border-radius:20px;width:34px;height:34px;cursor:pointer;font-size:15px">☀️</button>
     <div id="hdrTreso" style="display:flex;align-items:center;gap:6px;background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);padding:5px 11px;border-radius:20px;font-size:13px;font-weight:600;color:var(--teal,#14b8a6);white-space:nowrap" title="Trésorerie du club">🏦 <span id="hdrTresoVal">$0</span></div>
     <div class="hclock" id="clock"></div>
@@ -1674,12 +1674,20 @@ async function initDefaultGrades(){
   const defs=[{name:'President',coeff:2.0,pct:50,color:'b-orange',perms:'admin',order:0},{name:'Vice-President',coeff:1.8,pct:45,color:'b-red',perms:'admin',order:1},{name:'Lieutenant',coeff:1.4,pct:40,color:'b-gold',perms:'officer',order:2},{name:'Full Patch',coeff:1.2,pct:30,color:'b-green',perms:'member',order:3},{name:'Membre',coeff:1.0,pct:25,color:'b-purple',perms:'member',order:4},{name:'Prospect',coeff:0.8,pct:22,color:'b-gray',perms:'prospect',order:5}];
   for(const g of defs){const id=await fbAdd('grades',g);S.grades.push({...g,_id:id});}
 }
+
+// Rendu groupé : évite de relancer renderAll 15 fois quand plusieurs collections changent en rafale
+var _renderTimer=null;
+function renderAllDebounced(){
+  if(_renderTimer)clearTimeout(_renderTimer);
+  _renderTimer=setTimeout(function(){_renderTimer=null;try{renderAll();}catch(e){}},120);
+}
+
 function setupListeners(){
   const colKeys={grades:'grades',membres:'membres',ops:'ops',stock:'stock',events:'events',vehicles:'vehicles',sanctions:'sanctions',missions:'missions',reglement:'reglement',itemsBDD:'items',drugsBDD:'drugs',armes:'armes',commandes:'commandes',clients:'clients',bankMoves:'bankMoves'};
   Object.entries(colKeys).forEach(([col,key])=>{
-    FB.onSnapshot(FB.collection(db,col),snap=>{S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));if(col==='ops')S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));renderAll();});
+    FB.onSnapshot(FB.collection(db,col),snap=>{S[key]=[];snap.forEach(d=>S[key].push({...d.data(),_id:d.id}));if(col==='ops')S.ops.sort((a,b)=>(b.ts||0)-(a.ts||0));renderAllDebounced();});
   });
-  FB.onSnapshot(FB.doc(db,'config','main'),snap=>{if(snap.exists()){const d=snap.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);renderAll();}});
+  FB.onSnapshot(FB.doc(db,'config','main'),snap=>{if(snap.exists()){const d=snap.data();S.mcPct=d.mcPct||60;S.perms=d.perms||{};if(d.lim)Object.assign(LIM,d.lim);if(d.identity)S.identity=Object.assign(S.identity,d.identity);renderAllDebounced();}});
   FB.onSnapshot(FB.doc(db,'config','objective'),snap=>{S.objective=snap.exists()?{...snap.data(),_id:snap.id}:null;renderDashboard();});
   FB.onSnapshot(FB.doc(db,'config','daily'),snap=>{if(snap.exists()){Object.assign(S.daily,snap.data());renderLimits();}});
   FB.onSnapshot(FB.doc(db,'config','weekly'),snap=>{if(snap.exists()){Object.assign(S.weekly,snap.data());renderLimits();}});
@@ -2868,7 +2876,7 @@ function openTVMode(){
   ov.className='tv-overlay';
   document.body.appendChild(ov);
   renderTV();
-  tvInterval=setInterval(renderTV,5000);
+  tvInterval=setInterval(function(){var o=document.getElementById('tvOverlay');if(o&&o.style.display!=='none'&&o.offsetParent!==null)try{renderTV();}catch(e){}},5000);
   if(ov.requestFullscreen){ov.requestFullscreen().catch(function(){});}
 }
 function closeTVMode(){
@@ -4234,6 +4242,7 @@ function goTab(name){
   document.querySelectorAll('.navcat.open').forEach(c=>c.classList.remove('open'));var _ai=document.querySelector(`.navitem[data-tab="${name}"]`);if(_ai){_ai.classList.add('active');var _cat=_ai.closest('.navcat');if(_cat)_cat.classList.add('active');}var _at=document.querySelector(`.ntab[data-tab="${name}"]`);if(_at)_at.classList.add('active');
   const sub=document.getElementById('sub-braquages');
   if(name==='braquages'){sub.classList.add('show');goSub(currentSub);adjustBraqLayouts();}else sub.classList.remove('show');
+  try{renderAll();}catch(e){}
 }
 
 // Ajuste la largeur des formulaires de braquage selon que le résultat est affiché
@@ -4286,77 +4295,66 @@ function refreshSelects(){
 
 // ═══ RENDER ALL ═══
 function renderAll(){
-  try{renderDashboard();}catch(e){}
-  try{renderMembres();}catch(e){}
+  if(currentTab==='dashboard')try{renderDashboard();}catch(e){}
+  if(currentTab==='membres')try{renderMembres();}catch(e){}
   try{renderLimits();}catch(e){}
-  try{renderAtmPage();}catch(e){}
-  try{renderConteneurPage();}catch(e){}
-  try{renderStockPage();}catch(e){}
-  try{renderSalairesPage();}catch(e){}
-  try{renderStatsPage();}catch(e){}
-  try{renderAgendaPage();}catch(e){}
-  try{renderGaragePage();}catch(e){}
-  try{renderSanctionsPage();}catch(e){}
-  try{renderMissionsPage();}catch(e){}
-  try{renderReglementPage();}catch(e){}
-  try{renderConfigPage();}catch(e){}
-  try{renderItemsBDD();}catch(e){}
-  try{renderDroguesPage();}catch(e){}
-  try{renderHistoriqueGlobal();}catch(e){}
-  try{renderArmurerie();}catch(e){}
-  try{renderCommandes();}catch(e){}
-  try{renderBanque();}catch(e){}
-  try{renderMiniChart();}catch(e){}
-  try{renderClassement();}catch(e){}
+  if(currentTab==='braquages')try{renderAtmPage();}catch(e){}
+  if(currentTab==='braquages')try{renderConteneurPage();}catch(e){}
+  if(currentTab==='stock')try{renderStockPage();}catch(e){}
+  if(currentTab==='salaires')try{renderSalairesPage();}catch(e){}
+  if(currentTab==='stats')try{renderStatsPage();}catch(e){}
+  if(currentTab==='agenda')try{renderAgendaPage();}catch(e){}
+  if(currentTab==='garage')try{renderGaragePage();}catch(e){}
+  if(currentTab==='sanctions')try{renderSanctionsPage();}catch(e){}
+  if(currentTab==='missions')try{renderMissionsPage();}catch(e){}
+  if(currentTab==='reglement')try{renderReglementPage();}catch(e){}
+  if(currentTab==='config')try{renderConfigPage();}catch(e){}
+  if(currentTab==='itemsbdd')try{renderItemsBDD();}catch(e){}
+  if(currentTab==='drogues')try{renderDroguesPage();}catch(e){}
+  if(currentTab==='historique')try{renderHistoriqueGlobal();}catch(e){}
+  if(currentTab==='armurerie')try{renderArmurerie();}catch(e){}
+  if(currentTab==='commandes')try{renderCommandes();}catch(e){}
+  if(currentTab==='banque')try{renderBanque();}catch(e){}
+  if(currentTab==='dashboard')try{renderMiniChart();}catch(e){}
+  if(currentTab==='classement')try{renderClassement();}catch(e){}
   try{updateAlerts();}catch(e){}
   try{populateHistMemberFilter();}catch(e){}
   try{renderSmartAlerts();}catch(e){}
   try{renderRunWidget();}catch(e){}
   try{renderAnnonces();}catch(e){}
-  try{renderActivityChart();}catch(e){}
+  if(currentTab==='stats')try{renderActivityChart();}catch(e){}
   try{renderConnexions();}catch(e){}
   try{renderAllBraqInfo();}catch(e){}
-  try{renderInsights();}catch(e){}
-  try{renderHeatmap();}catch(e){}
-  try{renderWeekCard();}catch(e){}
+  if(currentTab==='dashboard')try{renderInsights();}catch(e){}
+  if(currentTab==='stats')try{renderHeatmap();}catch(e){}
+  if(currentTab==='dashboard')try{renderWeekCard();}catch(e){}
   try{checkAchievements();}catch(e){}
-  try{renderSimulator();}catch(e){}
-  try{renderFeed();}catch(e){}
-  try{renderOrgChart();}catch(e){}
-  try{renderPolls();}catch(e){}
-  try{renderIdentityForm();}catch(e){}
-  try{renderForecast();}catch(e){}
-  try{renderChecklists();}catch(e){}
-  try{renderActionPerms();}catch(e){}
-  try{renderAlbums();}catch(e){}
-  try{renderTrombi();}catch(e){}
-  try{renderBirthdays();}catch(e){}
+  if(currentTab==='braquages')try{renderSimulator();}catch(e){}
+  if(currentTab==='social')try{renderFeed();}catch(e){}
+  if(currentTab==='membres')try{renderOrgChart();}catch(e){}
+  if(currentTab==='social')try{renderPolls();}catch(e){}
+  if(currentTab==='config')try{renderIdentityForm();}catch(e){}
+  if(currentTab==='dashboard')try{renderForecast();}catch(e){}
+  if(currentTab==='dashboard')try{renderChecklists();}catch(e){}
+  if(currentTab==='config')try{renderActionPerms();}catch(e){}
+  if(currentTab==='galerie')try{renderAlbums();}catch(e){}
+  if(currentTab==='membres')try{renderTrombi();}catch(e){}
+  if(currentTab==='social')try{renderBirthdays();}catch(e){}
   try{renderCmdQueue();}catch(e){}
   try{renderSessionWidget();}catch(e){}
-  try{renderPlans();}catch(e){}
-  try{renderPilotage();}catch(e){}
-  try{renderRadio();}catch(e){}
-  try{renderChronicle();}catch(e){}
-  try{renderMemorial();}catch(e){}
+  if(currentTab==='missions')try{renderPlans();}catch(e){}
+  if(currentTab==='pilotage')try{renderPilotage();}catch(e){}
+  if(currentTab==='folklore')try{renderRadio();}catch(e){}
+  if(currentTab==='folklore')try{renderChronicle();}catch(e){}
+  if(currentTab==='folklore')try{renderMemorial();}catch(e){}
   try{checkNotifTriggers();}catch(e){}
   try{refreshSelects();}catch(e){}
   try{applyNavPerms();}catch(e){}
   try{renderMesCmds();}catch(e){}
   try{markCmdSeen();}catch(e){}
   try{applyUserBadge();}catch(e){}
-  // Trésorerie header
-  try{var _ht=document.getElementById('hdrTresoVal');if(_ht)_ht.textContent=fmt(bankBalance());}catch(e){}
-  // Items selectors
-  try{buildItemSelector('cambItemsList','cambriolage','cambTotal','cambDetail');}catch(e){}
-  try{buildItemSelector('bijItemsList','bijouterie','bijTotal','bijDetail');}catch(e){}
-  try{buildItemSelector('hlItemsList','humanlab','hlTotal','hlDetail');}catch(e){}
-  // Commandes : bannière membre + zone admin selon le rôle
-  try{
-    var _isOff=canDo('validate_commande');
-    var _az=document.getElementById('cmdAdminZone');if(_az)_az.style.display=_isOff?'block':'none';
-    var _mc=document.getElementById('maCmdCount');
-    if(_mc&&currentUser){var _mine=S.commandes.filter(function(c){return c.createdBy===currentUser._id&&!isArchived(c);}).length;_mc.textContent=_mine>0?(_mine+' commande(s) en cours'):'Aucune commande en cours';}
-  }catch(e){}
+
+
 }
 
 // ═══ RENDER FUNCTIONS ═══
